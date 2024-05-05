@@ -3,5 +3,5 @@
   "version": "0.0.1",
   "description": "Common code for file sharing service",
   "type": "module",
-  "module": "index.ts"
+  "types": "index.d.ts"
 }

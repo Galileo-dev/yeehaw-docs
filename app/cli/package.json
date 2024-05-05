@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "CLI for the file sharing service",
   "type": "module",
+  "bin": "index.ts",
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
   "dependencies": {
     "@file-sharing/common": "workspace:*"
   }
