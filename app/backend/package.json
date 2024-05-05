@@ -1,0 +1,10 @@
+{
+  "name": "@file-sharing/backend",
+  "version": "0.0.1",
+  "description": "Backend for file sharing service",
+  "type": "module",
+  "module": "src/index.ts",
+  "dependencies": {
+    "@file-sharing/common": "workspace:*"
+  }
+}

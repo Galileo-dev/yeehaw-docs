@@ -1,0 +1,9 @@
+{
+  "name": "file-sharing",
+  "private": true,
+  "module": "index.ts",
+  "type": "module",
+  "workspaces": [
+    "app/**"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@file-sharing/cli",
+  "version": "1.0.0",
+  "description": "CLI for the file sharing service",
+  "type": "module",
+  "dependencies": {
+    "@file-sharing/common": "workspace:*"
+  }
+}
