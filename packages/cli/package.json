@@ -1,5 +1,5 @@
 {
-  "name": "@file-sharing/cli",
+  "name": "@yeehaw-docs/cli",
   "version": "1.0.0",
   "description": "CLI for the file sharing service",
   "type": "module",
@@ -8,6 +8,6 @@
     "dev": "bun run index.ts"
   },
   "dependencies": {
-    "@file-sharing/common": "workspace:*"
+    "@yeehaw-docs/common": "workspace:*"
   }
 }

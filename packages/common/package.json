@@ -1,5 +1,5 @@
 {
-  "name": "@file-sharing/common",
+  "name": "@yeehaw-docs/common",
   "version": "0.0.1",
   "description": "Common code for file sharing service",
   "type": "module",

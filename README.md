@@ -1,4 +1,4 @@
-# file-sharing
+# yeehaw-docs
 
 To install dependencies:
 
