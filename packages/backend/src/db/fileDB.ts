@@ -1,11 +1,5 @@
 import { DB } from "../abstract/DB";
 
-export interface User {
-  id?: number;
-  username: string;
-  public_key: string;
-}
-
 export interface YeehawFile {
   id?: number;
   from_user_id: number;
@@ -46,5 +40,11 @@ export class FileDB extends DB {
         file.data.size,
         fileRaw
       ) as File;
+  }
+
+  async getSharedFiles(to_user_id: number) {
+    return this.db
+      .query(`SELECT * FROM file WHERE to_user_id = ?`)
+      .all(to_user_id) as YeehawFile[];
   }
 }

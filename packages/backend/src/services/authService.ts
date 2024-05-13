@@ -14,6 +14,12 @@ export class AuthService {
 
   // Get a user by username
   async getUser(username: string) {
-    return this.userDB.getUser(username);
+    const user = await this.userDB.getUser(username);
+    return user;
+  }
+
+  async checkUsernameAvailability(username: string) {
+    const user = await this.userDB.getUser(username);
+    return !user;
   }
 }
