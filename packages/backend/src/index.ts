@@ -1,10 +1,15 @@
 import { swagger } from "@elysiajs/swagger";
 import { Elysia, t } from "elysia";
+import ora from "ora";
 import { FileDB } from "./db/fileDB";
 import { UserDB } from "./db/userDB";
 import { AuthService } from "./services/authService";
 import { FileService } from "./services/fileService";
 
+const spinner = ora({
+  discardStdin: false,
+  text: "Loading database...",
+}).start();
 const userDB = new UserDB();
 const fileDB = new FileDB();
 
@@ -79,8 +84,13 @@ const app = new Elysia()
   )
   .listen(3001);
 
-console.log(
-  `\n🔥 File sharing is running at http://${app.server?.hostname}:${app.server?.port}...`
-);
+Promise.all([userDB.healthCheck(), fileDB.healthCheck()]).then(() => {
+  spinner.succeed("User database is running");
+  spinner.succeed("File database is running");
+
+  console.log(
+    `\n🔥 File sharing is running at http://${app.server?.hostname}:${app.server?.port}...`
+  );
+});
 
 export type App = typeof app;

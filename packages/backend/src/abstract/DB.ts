@@ -8,11 +8,13 @@ export abstract class DB {
     this.initialize();
   }
 
+  async healthCheck(): Promise<void> {
+    await this.db.query("SELECT 1");
+  }
+
   private async initialize(): Promise<void> {
-    console.log(`🔥 Initializing database ${this.dbPath}...`);
     try {
       await this.init();
-      console.log(`🔥 Database ${this.dbPath} is running...`);
     } catch (error) {
       console.error(error);
     }
