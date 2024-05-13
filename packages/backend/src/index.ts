@@ -1,14 +1,12 @@
 import { swagger } from "@elysiajs/swagger";
-import Database from "bun:sqlite";
 import { Elysia, t } from "elysia";
 import { FileDB } from "./db/fileDB";
 import { UserDB } from "./db/userDB";
 import { AuthService } from "./services/authService";
 import { FileService } from "./services/fileService";
 
-const db = new Database("file-server.db");
-const userDB = new UserDB(db);
-const fileDB = new FileDB(db);
+const userDB = new UserDB();
+const fileDB = new FileDB();
 
 const app = new Elysia()
   .use(swagger())

@@ -1,4 +1,3 @@
-import { Database } from "bun:sqlite";
 import { DB } from "../abstract/DB";
 
 export interface User {
@@ -16,14 +15,23 @@ export interface YeehawFile {
 }
 
 export class FileDB extends DB {
-  private db: Database;
-
-  constructor(db: Database) {
-    super();
-    this.db = db;
+  constructor() {
+    super("file.db");
   }
 
-  // Add a new file
+  async init() {
+    this.db.run(`
+        CREATE TABLE IF NOT EXISTS file (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            size INTEGER NOT NULL,
+            data BLOB NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES user(id)
+        )
+    `);
+  }
+
   async addFile(file: YeehawFile) {
     const fileRaw = new Uint8Array(await file.data.arrayBuffer());
     return this.db
@@ -38,19 +46,5 @@ export class FileDB extends DB {
         file.data.size,
         fileRaw
       ) as File;
-  }
-
-  async init() {
-    // Create file upload table
-    this.db.run(`
-        CREATE TABLE IF NOT EXISTS file (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            size INTEGER NOT NULL,
-            data BLOB NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES user(id)
-        )
-    `);
   }
 }

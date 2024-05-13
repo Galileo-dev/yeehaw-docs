@@ -1,4 +1,3 @@
-import { Database } from "bun:sqlite";
 import { DB } from "../abstract/DB";
 
 export interface User {
@@ -16,11 +15,19 @@ export interface File {
 }
 
 export class UserDB extends DB {
-  private db: Database;
+  constructor() {
+    super("user.db");
+  }
 
-  constructor(db: Database) {
-    super();
-    this.db = db;
+  async init() {
+    // create user table
+    this.db.run(`
+        CREATE TABLE IF NOT EXISTS user (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            password_hash TEXT NOT NULL
+        )
+    `);
   }
 
   // Get all users
@@ -53,16 +60,5 @@ export class UserDB extends DB {
             VALUES (?, ?, ?, ?) RETURNING id`
       )
       .get(file.user_id, file.name, file.size, file.data) as File;
-  }
-
-  async init() {
-    // create user table
-    this.db.run(`
-        CREATE TABLE IF NOT EXISTS user (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            password_hash TEXT NOT NULL
-        )
-    `);
   }
 }

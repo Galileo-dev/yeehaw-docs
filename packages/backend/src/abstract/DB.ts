@@ -1,11 +1,22 @@
+import Database from "bun:sqlite";
+
 export abstract class DB {
-  constructor() {
-    // Initialize the database
-    console.log("\n🚀 Initializing database...");
-    this.init()
-      .then(() => console.log("\n✅ Database initialized"))
-      .catch(console.error);
+  protected db: Database;
+
+  constructor(protected dbPath: string) {
+    this.db = new Database(dbPath);
+    this.initialize();
   }
 
-  abstract init(): Promise<void>;
+  private async initialize(): Promise<void> {
+    console.log(`🔥 Initializing database ${this.dbPath}...`);
+    try {
+      await this.init();
+      console.log(`🔥 Database ${this.dbPath} is running...`);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  protected abstract init(): Promise<void>;
 }
