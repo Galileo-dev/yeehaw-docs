@@ -9,7 +9,8 @@
     "@elysiajs/jwt": "^1.0.2",
     "@elysiajs/swagger": "^1.0.5",
     "@yeehaw-docs/common": "workspace:*",
-    "elysia": "latest"
+    "elysia": "latest",
+    "ora": "^8.0.1"
   },
   "devDependencies": {
     "bun-types": "latest"
