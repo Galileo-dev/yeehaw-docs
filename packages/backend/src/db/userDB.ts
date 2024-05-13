@@ -1,9 +1,10 @@
 import { Database } from "bun:sqlite";
+import { DB } from "../abstract/DB";
 
 export interface User {
   id?: number;
   username: string;
-  password_hash: string;
+  public_key: string;
 }
 
 export interface File {
@@ -14,16 +15,12 @@ export interface File {
   data: Buffer;
 }
 
-export class FileSharingDatabase {
+export class UserDB extends DB {
   private db: Database;
 
-  constructor() {
-    this.db = new Database("db.db");
-    // Initialize the database
-    console.log("\n🚀 Initializing database...");
-    this.init()
-      .then(() => console.log("\n✅ Database initialized"))
-      .catch(console.error);
+  constructor(db: Database) {
+    super();
+    this.db = db;
   }
 
   // Get all users
@@ -35,10 +32,10 @@ export class FileSharingDatabase {
   async addUser(user: User) {
     return this.db
       .query(
-        `INSERT INTO user (username, password_hash)
+        `INSERT INTO user (username, public_key)
         VALUES (?, ?) RETURNING id`
       )
-      .get(user.username, user.password_hash) as User;
+      .get(user.username, user.public_key) as User;
   }
 
   // Get a user by username
@@ -59,23 +56,12 @@ export class FileSharingDatabase {
   }
 
   async init() {
+    // create user table
     this.db.run(`
         CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             password_hash TEXT NOT NULL
-        )
-    `);
-
-    // create file upload table
-    this.db.run(`
-        CREATE TABLE IF NOT EXISTS file (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            size INTEGER NOT NULL,
-            data BLOB NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES user(id)
         )
     `);
   }
