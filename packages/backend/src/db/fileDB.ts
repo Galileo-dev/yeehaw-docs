@@ -9,8 +9,8 @@ export interface YeehawFile {
 }
 
 export class FileDB extends DB {
-  constructor() {
-    super("file.db");
+  constructor(path = "file.db") {
+    super(path);
   }
 
   async init() {

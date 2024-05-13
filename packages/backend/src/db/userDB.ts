@@ -7,8 +7,8 @@ export interface User {
 }
 
 export class UserDB extends DB {
-  constructor() {
-    super("user.db");
+  constructor(path = "user.db") {
+    super(path);
   }
 
   async init() {
