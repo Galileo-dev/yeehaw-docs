@@ -1,5 +1,6 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { cowboyBoot } from './cowboyBoot';
 
 import { signup_handler } from "./handler";
 
@@ -8,8 +9,9 @@ yargs(hideBin(process.argv))
         "start", 
         "Start the CLI",
         () => {
+            console.log(cowboyBoot);
             console.log("Howdy Partner! Welcome to Yeehaw-Docs");
-            console.log("type 'yeehaw register 'username' 'password' ' to signup for a new account");
+            console.log("type", "yeehaw register 'username' 'password' ", "to signup for a new account");
         }
     )
     .command(
