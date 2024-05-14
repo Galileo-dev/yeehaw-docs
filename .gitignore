@@ -176,3 +176,6 @@ dist
 
 # SQLite database file
 *.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db

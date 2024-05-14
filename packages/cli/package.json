@@ -7,10 +7,9 @@
     "yeehaw": "./index.ts"
   },
   "scripts": {
-    "dev": "bun index.ts"
+    "dev": "bun run index.ts"
   },
   "dependencies": {
-    
     "yargs": "^17.7.2"
   },
   "devDependencies": {
