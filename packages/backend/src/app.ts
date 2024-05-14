@@ -61,7 +61,7 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .post(
       "/upload",
       ({ body: { from_user_name, to_user_name, file }, fileService }) => {
-        fileService.upload(from_user_name, to_user_name, file);
+        return fileService.upload(from_user_name, to_user_name, file);
       },
       {
         // Validate the request body
@@ -89,7 +89,7 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
         return fileService.getSharedFiles(username);
       },
       {
-        body: t.Object({ username: t.String() }),
+        params: t.Object({ username: t.String() }),
         detail: {
           summary: "Get all files shared with a user",
           tags: ["file"],

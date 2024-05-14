@@ -32,7 +32,7 @@ export class UserDB extends DB {
     return this.db
       .query(
         `INSERT INTO user (username, public_key)
-        VALUES (?, ?) RETURNING id`
+        VALUES (?, ?) RETURNING *`
       )
       .get(user.username, user.public_key) as User;
   }
