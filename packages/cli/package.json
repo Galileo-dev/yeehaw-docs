@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "description": "CLI for the file sharing service",
   "type": "module",
-  "bin": "index.ts",
+  "bin": {
+    "yeehaw": "./index.ts"
+  },
   "scripts": {
     "dev": "bun run index.ts"
   },
   "dependencies": {
-    "@yeehaw-docs/common": "workspace:*"
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.32"
   }
 }
