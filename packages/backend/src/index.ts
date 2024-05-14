@@ -10,7 +10,9 @@ const spinner = ora({
 const userDB = new UserDB();
 const fileDB = new FileDB();
 
-const App = app(userDB, fileDB).listen(30001);
+const App = app(userDB, fileDB).listen(3001);
+
+export type App = typeof App;
 
 // if not in test mode
 if (process.env.NODE_ENV !== "test") {

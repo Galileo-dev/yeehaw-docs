@@ -1,13 +1,36 @@
-import { create_new_user } from "./db";
-export function signup_handler(username: string) {
-    try {
-        create_new_user(username);
-        console.log(`User ${username} created successfully`);
-    } catch (err) {
-        if (err instanceof Error) {
-            console.error(`Error: ${err.message}`);
-        } else {
-            console.error(`An unexpected error occurred: ${err}`);
-        }
-    }
+import { treaty } from "@elysiajs/eden";
+import { generateKeyPairSync } from "crypto";
+import type { App } from "../../backend/src";
+import { createNewUser } from "./db";
+
+const app = treaty<App>("localhost:3001");
+
+export async function signup_handler(username: string) {
+  const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+    modulusLength: 4096,
+    publicKeyEncoding: {
+      type: "spki",
+      format: "pem",
+    },
+    privateKeyEncoding: {
+      type: "pkcs8",
+      format: "pem",
+    },
+  });
+
+  const { data, error } = await app.register.post({
+    username,
+    public_key: publicKey,
+  });
+
+  if (error || !data) {
+    console.error(error);
+    return;
+  }
+
+  const { id } = await createNewUser(username, publicKey, privateKey);
+
+  if (id) {
+    console.log("User created successfully");
+  }
 }
