@@ -11,21 +11,21 @@ export class FileService {
   }
 
   // Upload an encrypted file to the server and assign it to a user
-  async upload(from_user_name: string, to_user_name: string, file: File) {
-    const fromUser: User | null = await this.userDB.getUser(from_user_name);
-    const toUser: User | null = await this.userDB.getUser(to_user_name);
+  async upload(fromUsername: string, toUsername: string, file: File) {
+    const fromUser: User | null = await this.userDB.getUser(fromUsername);
+    const toUser: User | null = await this.userDB.getUser(toUsername);
 
     if (!fromUser || fromUser.id === undefined) {
-      throw new Error(`Invalid user: ${from_user_name}`);
+      throw new Error(`Invalid user: ${fromUsername}`);
     }
 
     if (!toUser || toUser.id === undefined) {
-      throw new Error(`Invalid user: ${to_user_name}`);
+      throw new Error(`Invalid user: ${toUsername}`);
     }
 
     return this.fileDB.addFile({
-      from_user_name: fromUser.username,
-      to_user_name: toUser.username,
+      fromUsername: fromUser.username,
+      toUsername: toUser.username,
       name: file.name,
       size: file.size,
       data: file,

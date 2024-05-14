@@ -101,8 +101,8 @@ describe("Yeehaw Docs E2E", () => {
     });
 
     const formData = new FormData();
-    formData.append("from_user_name", "fromuser");
-    formData.append("to_user_name", "touser");
+    formData.append("fromUsername", "fromuser");
+    formData.append("toUsername", "touser");
     formData.append("file", file);
 
     const response = await app(userDB, fileDB)
@@ -141,8 +141,8 @@ describe("Yeehaw Docs E2E", () => {
     expect(files).toEqual([
       {
         id: 1,
-        from_user_name: "fromuser",
-        to_user_name: "touser",
+        fromUsername: "fromuser",
+        toUsername: "touser",
         name: "testfile.txt",
         size: file.size,
       },
