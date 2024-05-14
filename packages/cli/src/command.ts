@@ -11,7 +11,7 @@ yargs(hideBin(process.argv))
         () => {
             console.log(cowboyBoot);
             console.log("Howdy Partner! Welcome to Yeehaw-Docs");
-            console.log("type", "yeehaw register 'username' 'password' ", "to signup for a new account");
+            console.log("Commands: 'yeehaw register username password' -> signup for a new account");
         }
     )
     .command(

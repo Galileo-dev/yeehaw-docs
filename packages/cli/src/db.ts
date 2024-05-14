@@ -14,8 +14,7 @@ export function create_new_user(username: string, password: string): void {
   const userExists = userExistsQuery.get(username);
 
   if (userExists) {
-    console.error(`User with username ${username} already exists.`);
-    return;
+    throw new Error(`User with username ${username} already exists.`);
   }
 
   const query = db.query(`INSERT INTO user (username, password) VALUES (?, ?)`);
