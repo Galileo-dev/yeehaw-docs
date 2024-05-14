@@ -11,22 +11,18 @@ yargs(hideBin(process.argv))
         () => {
             console.log(cowboyBoot);
             console.log("Howdy Partner! Welcome to Yeehaw-Docs");
-            console.log("Commands: 'yeehaw register username password' -> signup for a new account");
+            console.log("Commands: 'yeehaw register username' -> signup for a new account");
         }
     )
     .command(
-        "register <username> <password>",
+        "register <username>",
         "Sign up for a new account",
         (yargs) => 
             yargs
                 .positional("username", {
                     description: "The username for the new account",
                     type: "string",
-                })
-                .positional("password", {
-                    description: "The password for the new account",
-                    type: "string",
                 }),
-        (argv) => signup_handler(argv.username as string, argv.password as string),
+        (argv) => signup_handler(argv.username as string),
     )
     .parse();
