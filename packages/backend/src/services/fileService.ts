@@ -24,9 +24,10 @@ export class FileService {
     }
 
     return this.fileDB.addFile({
-      from_user_id: fromUser.id,
-      to_user_id: toUser.id,
+      from_user_name: fromUser.username,
+      to_user_name: toUser.username,
       name: file.name,
+      size: file.size,
       data: file,
     });
   }
@@ -39,6 +40,8 @@ export class FileService {
       throw new Error(`Invalid user: ${username}`);
     }
 
-    return this.fileDB.getSharedFiles(user.id);
+    const files = this.fileDB.getSharedFiles(user.username);
+    // replacee the user id's with the usernames
+    return files;
   }
 }
