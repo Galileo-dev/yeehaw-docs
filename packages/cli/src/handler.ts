@@ -1,7 +1,7 @@
 import { create_new_user } from "./db";
-export function signup_handler(username: string, password: string) {
+export function signup_handler(username: string) {
     try {
-        create_new_user(username, password);
+        create_new_user(username);
         console.log(`User ${username} created successfully`);
     } catch (err) {
         if (err instanceof Error) {

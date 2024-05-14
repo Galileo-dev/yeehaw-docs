@@ -16,7 +16,7 @@ yargs(hideBin(process.argv))
     yargs.showHelp();
   })
   .command(
-    "register <username> <password>",
+    "register <username>",
     "Sign up for a new account",
     (yargs) =>
       yargs
@@ -24,12 +24,7 @@ yargs(hideBin(process.argv))
           description: "The username for the new account",
           type: "string",
           demandOption: true,
-        })
-        .positional("password", {
-          description: "The password for the new account",
-          type: "string",
-          demandOption: true,
         }),
-    (argv) => signup_handler(argv.username, argv.password)
-  )
+    (argv) => signup_handler(argv.username)
+    )
   .parse();
