@@ -4,7 +4,7 @@
   "description": "CLI for the file sharing service",
   "type": "module",
   "bin": {
-    "note": "./index.ts"
+    "yeehaw": "./index.ts"
   },
   "scripts": {
     "dev": "bun index.ts"
