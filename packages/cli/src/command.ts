@@ -1,34 +1,30 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { signup_handler , start_handler} from "./handler";
 
-const { create_note_handler } = require("./handler");
+import { signup_handler } from "./handler";
 
 yargs(hideBin(process.argv))
     .command(
-        "new <note>",
-        "Creates a new Note",
-        (yargs) =>
-            yargs.positional("note", {
-                description: "The content of the note",
-                type: "string",
-            }),
-        (argv) => create_note_handler(argv.note as string),
+        "start", 
+        "Start the CLI",
+        () => {
+            console.log("Howdy Partner! Welcome to Yeehaw-Docs");
+            console.log("type 'yeehaw register 'username' 'password' ' to signup for a new account");
+        }
     )
     .command(
-        "signup <username>", 
+        "register <username> <password>",
         "Sign up for a new account",
-        (yargs) =>
-            yargs.positional("username", {
-                description: "The username for the new account",
-                type: "string",
-            }),
-        (argv) => signup_handler(argv.username as string),
-    )
-    .command(
-        "start",
-        "Start the service",
-        (yargs) => yargs,
-        (argv) => start_handler(),
+        (yargs) => 
+            yargs
+                .positional("username", {
+                    description: "The username for the new account",
+                    type: "string",
+                })
+                .positional("password", {
+                    description: "The password for the new account",
+                    type: "string",
+                }),
+        (argv) => signup_handler(argv.username as string, argv.password as string),
     )
     .parse();

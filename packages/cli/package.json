@@ -10,7 +10,7 @@
     "dev": "bun index.ts"
   },
   "dependencies": {
-    "@yeehaw-docs/cli": "link:@yeehaw-docs/cli",
+    
     "yargs": "^17.7.2"
   },
   "devDependencies": {
