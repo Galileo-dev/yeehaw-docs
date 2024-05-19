@@ -1,5 +1,6 @@
 import { Database } from "bun:sqlite";
 import crypto from "crypto";
+import bun from "bun";
 
 const db = new Database("../db.sqlite")
 db.exec("PRAGMA journal_mode = WAL;")
@@ -11,7 +12,7 @@ export const user_table_query = db.prepare(`CREATE TABLE IF NOT EXISTS user (
   private_key TEXT NOT NULL
 )`).run()
 
-export function create_new_user(username: string): void {
+export async function create_new_user(username: string, password: string): Promise<void> {
   const userExistsQuery = db.query(`SELECT * FROM user WHERE username = ?`);
   const userExists = userExistsQuery.get(username);
 
@@ -31,7 +32,8 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
   }
 });
 
-const query = db.query(`INSERT INTO user (username, public_key, private_key) VALUES (?, ?, ?)`);
-query.run(username, publicKey, privateKey);
-}
+const hashedPassword = await bun.password.hash(password); 
 
+const query = db.query(`INSERT INTO user (username, password, public_key, private_key) VALUES (?, ?, ?)`);
+query.run(username, hashedPassword, publicKey, privateKey);
+}

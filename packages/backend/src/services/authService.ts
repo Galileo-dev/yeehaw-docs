@@ -1,4 +1,5 @@
 import { UserDB } from "../db/userDB";
+import Bun from "bun";
 
 export class AuthService {
   private userDB: UserDB;
@@ -22,4 +23,7 @@ export class AuthService {
     const user = await this.userDB.getUser(username);
     return !user;
   }
+
+  async checkPassword(username: string, password: string) {
+    const isMatch = await Bun.password.verify(password, hash);
 }
