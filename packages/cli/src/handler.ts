@@ -38,11 +38,11 @@ export async function signup_handler(username: string) {
   }
 }
 
-export async function upload_handler(filePath: string) {
+export async function upload_handler(filePath: string, recipient: string) {
   const form = new FormData();
   form.append('file', createReadStream(filePath));
-  form.append('fromUsername', 'rob');  // Replace with actual username
-  form.append('toUsername', 'robby');  // Replace with actual recipient username
+  form.append('fromUsername', 'rob');  
+  form.append('toUsername', recipient);
 
   try {
     const response = await axios.post('http://localhost:3001/upload', form, {

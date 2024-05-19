@@ -28,14 +28,18 @@ yargs(hideBin(process.argv))
     (argv) => signup_handler(argv.username)
     )
   .command(
-    "upload <file>",
-    "Upload a file",
+    "upload <file> <recipient>",
+    "Upload a file to a recipient",
     (yargs) =>
       yargs.positional("file", {
         description: "The path to the file to upload",
         type: "string",
         demandOption: true,
+      }).positional("recipient", {
+        description: "The username of the recipient",
+        type: "string",
+        demandOption: true,
       }),
-    (argv) => upload_handler(argv.file)
+    (argv) => upload_handler(argv.file, argv.recipient)
   )
   .parse();
