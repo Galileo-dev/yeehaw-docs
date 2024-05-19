@@ -34,3 +34,5 @@ export async function signup_handler(username: string) {
     console.log("User created successfully");
   }
 }
+
+export async function upload_handler(filePath: string) {}

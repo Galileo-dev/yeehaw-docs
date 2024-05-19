@@ -2,7 +2,7 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
-import { signup_handler } from "./handler";
+import { signup_handler, upload_handler } from "./handler";
 
 const log = console.log;
 
@@ -27,7 +27,7 @@ yargs(hideBin(process.argv))
         }),
     (argv) => signup_handler(argv.username)
     )
-      .command(
+  .command(
     "upload <file>",
     "Upload a file",
     (yargs) =>
