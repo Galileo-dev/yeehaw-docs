@@ -17,6 +17,7 @@ export class UserDB extends DB {
         CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
             public_key TEXT NOT NULL
         )
     `);

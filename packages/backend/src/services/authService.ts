@@ -24,6 +24,8 @@ export class AuthService {
     return !user;
   }
 
-  async checkPassword(username: string, password: string) {
+  async checkPassword(password: string, hash: string) {
     const isMatch = await Bun.password.verify(password, hash);
+    return isMatch;
+  }
 }

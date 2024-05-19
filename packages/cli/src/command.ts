@@ -30,5 +30,5 @@ yargs(hideBin(process.argv))
           demandOption: true,
         }),
     (argv) => signup_handler(argv.username, argv.password)
-    )
+  )
   .parse();
