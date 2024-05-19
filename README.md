@@ -11,7 +11,7 @@ To run your own instance of the yeehaw-docs backend, clone this repo and run the
 ```bash
 cd packages/backend
 bun install
-bun start
+bun dev
 ```
 
 To run the CLI, run the following commands:
