@@ -2,7 +2,7 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
-import { signup_handler } from "./handler";
+import { signup_handler, upload_handler } from "./handler";
 
 const log = console.log;
 
@@ -27,4 +27,23 @@ yargs(hideBin(process.argv))
         }),
     (argv) => signup_handler(argv.username)
     )
+  .command(
+    "upload <file> <recipient> <sender>",
+    "Upload a file to a recipient",
+    (yargs) =>
+      yargs.positional("file", {
+        description: "The path to the file to upload",
+        type: "string",
+        demandOption: true,
+      }).positional("recipient", {
+        description: "The username of the recipient",
+        type: "string",
+        demandOption: true,
+      }).positional("sender", {
+        description: "The username of the sender",
+        type: "string",
+        demandOption: true,
+      }),
+    (argv) => upload_handler(argv.file, argv.recipient, argv.sender)
+  )
   .parse();
