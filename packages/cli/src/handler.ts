@@ -38,10 +38,10 @@ export async function signup_handler(username: string) {
   }
 }
 
-export async function upload_handler(filePath: string, recipient: string) {
+export async function upload_handler(filePath: string, recipient: string, sender: string) {
   const form = new FormData();
   form.append('file', createReadStream(filePath));
-  form.append('fromUsername', 'rob');  
+  form.append('fromUsername', sender);  
   form.append('toUsername', recipient);
 
   try {
