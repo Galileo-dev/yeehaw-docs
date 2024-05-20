@@ -1,4 +1,5 @@
 import { UserDB } from "../db/userDB";
+import Bun from "bun";
 
 export class AuthService {
   private userDB: UserDB;
@@ -8,8 +9,8 @@ export class AuthService {
   }
 
   // Register a new user
-  async register(username: string, public_key: string) {
-    return this.userDB.addUser({ username, public_key });
+  async register(username: string, password: string, public_key: string) {
+    return this.userDB.addUser({ username, password, public_key });
   }
 
   // Get a user by username
@@ -21,5 +22,10 @@ export class AuthService {
   async checkUsernameAvailability(username: string) {
     const user = await this.userDB.getUser(username);
     return !user;
+  }
+
+  async checkPassword(password: string, hash: string) {
+    const isMatch = await Bun.password.verify(password, hash);
+    return isMatch;
   }
 }

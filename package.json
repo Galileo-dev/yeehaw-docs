@@ -5,5 +5,8 @@
   "type": "module",
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "bun-types": "^1.1.8"
+  }
 }
