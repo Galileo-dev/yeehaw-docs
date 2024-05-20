@@ -9,8 +9,8 @@ export class AuthService {
   }
 
   // Register a new user
-  async register(username: string, public_key: string) {
-    return this.userDB.addUser({ username, public_key });
+  async register(username: string, password: string, public_key: string) {
+    return this.userDB.addUser({ username, password, public_key });
   }
 
   // Get a user by username

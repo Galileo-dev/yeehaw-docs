@@ -2,8 +2,9 @@ import { DB } from "../abstract/DB";
 
 export interface User {
   id?: number;
+  password: string;
   username: string;
-  public_key: string;
+  public_key: string
 }
 
 export class UserDB extends DB {
