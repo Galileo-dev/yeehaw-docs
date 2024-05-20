@@ -15,3 +15,5 @@ MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf
 -----END PUBLIC KEY-----`,
   pattern: "/-----BEGIN PUBLIC KEY-----(.*)-----END PUBLIC KEY-----/s",
 });
+
+//Add password model here
