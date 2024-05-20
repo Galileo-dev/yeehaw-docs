@@ -4,6 +4,7 @@ export const UsernameModel = t.String({
   minLength: 3,
   maxLength: 20,
   default: "john_doe",
+  pattern: "^[a-zA-Z0-9_]*$",
   description:
     "A username must be between 3 and 20 characters long and can only contain letters, numbers, and underscores",
 });

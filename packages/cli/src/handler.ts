@@ -1,7 +1,4 @@
 import { treaty } from "@elysiajs/eden";
-import { createReadStream } from "fs";
-import FormData from "form-data";
-import axios from "axios";
 import { generateKeyPairSync } from "crypto";
 import type { App } from "../../backend/src";
 import { createNewUser } from "./db";
@@ -26,9 +23,14 @@ export async function signup_handler(username: string) {
     public_key: publicKey,
   });
 
-  if (error || !data) {
-    console.error(error);
-    return;
+  if (error) {
+    switch (error.status) {
+      case 400:
+        throw error.value;
+
+      default:
+        throw error.value;
+    }
   }
 
   const { id } = await createNewUser(username, publicKey, privateKey);
@@ -38,31 +40,33 @@ export async function signup_handler(username: string) {
   }
 }
 
-export async function upload_handler(filePath: string, recipient: string, sender: string) {
-  const form = new FormData();
-  form.append('file', createReadStream(filePath));
-  form.append('fromUsername', sender);  
-  form.append('toUsername', recipient);
+export async function upload_handler(
+  filePath: string,
+  recipient: string,
+  sender: string
+) {
+  const bunFile = await Bun.file(filePath);
+  const fileBuffer = await bunFile.arrayBuffer();
+  const fileName = bunFile.name;
+  if (!fileName) {
+    throw new Error("File name is not valid");
+  }
+  const file = new File([fileBuffer], fileName, { type: bunFile.type });
+  const { data, error } = await app.upload.post({
+    file,
+    fromUsername: sender,
+    toUsername: recipient,
+  });
 
-  try {
-    const response = await axios.post('http://localhost:3001/upload', form, {
-      headers: form.getHeaders(),
-    });
+  if (error) {
+    switch (error.status) {
+      case 400:
+        throw error.value;
 
-    if (response.status === 200) {
-      console.log("File uploaded successfully");
-    } else {
-      console.error(`Failed to upload file: ${response.status} ${response.statusText}`);
-      console.error(response.data);
-    }
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error(`Error uploading file: ${error.message}`);
-      if (error.response) {
-        console.error(`Response data: ${JSON.stringify(error.response.data)}`);
-      }
-    } else {
-      console.error("Unexpected error:", error);
+      default:
+        throw error.value;
     }
   }
+
+  console.log("File uploaded successfully");
 }
