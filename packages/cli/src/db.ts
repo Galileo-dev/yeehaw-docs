@@ -7,8 +7,7 @@ interface User {
   private_key: string;
 }
 
-const db = new Database("../db.sqlite");
-db.exec("PRAGMA journal_mode = WAL;");
+const db = new Database("../cli.db");
 
 export const user_table_query = db
   .prepare(
@@ -21,28 +20,20 @@ export const user_table_query = db
   )
   .run();
 
-export async function create_new_user(username: string, password: string): Promise<void> {
-  const userExistsQuery = db.query(`SELECT * FROM user WHERE username = ?`);
-  const userExists = userExistsQuery.get(username);
+export async function addUser(
+  username: string,
+  publicKey: string,
+  privateKey: string
+): Promise<User> {
+  return db
+    .query(
+      `INSERT INTO user (username, public_key, private_key) VALUES (?, ?, ?) RETURNING *`
+    )
+    .get(username, publicKey, privateKey) as User;
+}
 
-  if (userExists) {
-    throw new Error(`User with username ${username} already exists.`);
-  }
-
-  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-    modulusLength: 2048,
-    publicKeyEncoding: {
-      type: 'spki',
-      format: 'pem'
-    },
-    privateKeyEncoding: {
-      type: 'pkcs8',
-      format: 'pem'
-    }
-  });
-
-  const hashedPassword = await bun.password.hash(password);
-
-  const query = db.query(`INSERT INTO user (username, public_key, private_key) VALUES (?, ?, ?)`);
-  query.run(username, publicKey, privateKey);
+export async function getUser(username: string): Promise<User> {
+  return db
+    .query("SELECT * FROM user WHERE username = ?")
+    .get(username) as User;
 }

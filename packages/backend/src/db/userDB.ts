@@ -2,9 +2,9 @@ import { DB } from "../abstract/DB";
 
 export interface User {
   id?: number;
-  password: string;
+  password_hash: string;
   username: string;
-  public_key: string
+  public_key: string;
 }
 
 export class UserDB extends DB {
@@ -18,7 +18,7 @@ export class UserDB extends DB {
         CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
             public_key TEXT NOT NULL
         )
     `);
@@ -33,10 +33,10 @@ export class UserDB extends DB {
   async addUser(user: User) {
     return this.db
       .query(
-        `INSERT INTO user (username, public_key)
-        VALUES (?, ?) RETURNING *`
+        `INSERT INTO user (username, password_hash, public_key)
+        VALUES (?, ?, ?) RETURNING *`
       )
-      .get(user.username, user.public_key) as User;
+      .get(user.username, user.password_hash, user.public_key) as User;
   }
 
   // Get a user by username

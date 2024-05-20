@@ -1,5 +1,5 @@
-import { UserDB } from "../db/userDB";
 import Bun from "bun";
+import { UserDB } from "../db/userDB";
 
 export class AuthService {
   private userDB: UserDB;
@@ -10,7 +10,8 @@ export class AuthService {
 
   // Register a new user
   async register(username: string, password: string, public_key: string) {
-    return this.userDB.addUser({ username, password, public_key });
+    const password_hash = await Bun.password.hash(password);
+    return this.userDB.addUser({ username, password_hash, public_key });
   }
 
   // Get a user by username

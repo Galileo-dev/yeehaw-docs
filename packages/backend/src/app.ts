@@ -1,6 +1,6 @@
 import { swagger } from "@elysiajs/swagger";
 import { Elysia, t } from "elysia";
-import { UsernameModel } from "../models";
+import { PasswordModel, UsernameModel } from "../models";
 import { FileDB } from "./db/fileDB";
 import { UserDB } from "./db/userDB";
 import { AuthService } from "./services/authService";
@@ -20,18 +20,19 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .get("/version", ({ store: { version } }) => version)
     .post(
       "/register",
-      async ({ body: { username, public_key }, authService }) => {
+      async ({ body: { username, password, public_key }, authService }) => {
         if (!(await authService.checkUsernameAvailability(username))) {
           throw new Error("Username is already taken");
         }
 
-        return authService.register(username, public_key);
+        return authService.register(username, password, public_key);
       },
       {
         // Validate the request body
         body: t.Object(
           {
             username: UsernameModel,
+            password: PasswordModel,
             public_key: t.String(),
           },
           {

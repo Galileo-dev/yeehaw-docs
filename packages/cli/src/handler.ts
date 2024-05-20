@@ -1,11 +1,22 @@
 import { treaty } from "@elysiajs/eden";
 import { generateKeyPairSync } from "crypto";
 import type { App } from "../../backend/src";
-import { createNewUser } from "./db";
+import { addUser, getUser } from "./db";
 
 const app = treaty<App>("localhost:3001");
 
-export async function signup_handler(username: string) {
+
+
+
+export async function signupHandler(username: string, password: string) {
+
+  if(!await checkUsernameAvailability(username)){
+    if (!await confirm("Username already exists locally, do you want to overwrite with new user? (you will lose access to the old user's files!)")) {
+      return;
+    }
+  }
+
+
   const { publicKey, privateKey } = generateKeyPairSync("rsa", {
     modulusLength: 4096,
     publicKeyEncoding: {
@@ -18,8 +29,10 @@ export async function signup_handler(username: string) {
     },
   });
 
+  // create the user on the server
   const { data, error } = await app.register.post({
     username,
+    password,
     public_key: publicKey,
   });
 
@@ -33,14 +46,13 @@ export async function signup_handler(username: string) {
     }
   }
 
-  const { id } = await createNewUser(username, publicKey, privateKey);
-
-  if (id) {
+   if (await addUser(username, publicKey, privateKey)) {
     console.log("User created successfully");
   }
+
 }
 
-export async function upload_handler(
+export async function uploadHandler(
   filePath: string,
   recipient: string,
   sender: string
@@ -69,4 +81,9 @@ export async function upload_handler(
   }
 
   console.log("File uploaded successfully");
+}
+
+export async function checkUsernameAvailability(username: string) {
+  const user = await getUser(username);
+  return !user;
 }

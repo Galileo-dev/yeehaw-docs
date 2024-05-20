@@ -37,6 +37,7 @@ describe("Yeehaw Docs E2E", () => {
           method: "POST",
           body: JSON.stringify({
             username: "testuser",
+            password: "Password123!",
             public_key: "publickey123",
           }),
           headers: { "Content-Type": "application/json" },
@@ -53,7 +54,7 @@ describe("Yeehaw Docs E2E", () => {
 
   it("should not allow registering a user with an existing username", async () => {
     const authService = new AuthService(userDB);
-    await authService.register("testuser", "publickey123");
+    await authService.register("testuser", "Password123!", "publickey123");
 
     const response = await app(userDB, fileDB)
       .handle(
@@ -61,6 +62,7 @@ describe("Yeehaw Docs E2E", () => {
           method: "POST",
           body: JSON.stringify({
             username: "testuser",
+            password: "Password123!",
             public_key: "anotherkey456",
           }),
           headers: { "Content-Type": "application/json" },
@@ -75,7 +77,7 @@ describe("Yeehaw Docs E2E", () => {
 
   it("should get user details by username", async () => {
     const authService = new AuthService(userDB);
-    await authService.register("testuser", "publickey123");
+    await authService.register("testuser", "Password123!", "publickey123");
 
     const response = await app(userDB, fileDB)
       .handle(
@@ -93,8 +95,8 @@ describe("Yeehaw Docs E2E", () => {
 
   it("should upload a file", async () => {
     const authService = new AuthService(userDB);
-    await authService.register("fromuser", "publickey1");
-    await authService.register("touser", "publickey2");
+    await authService.register("fromuser", "Password123!", "publickey1");
+    await authService.register("touser", "Password123!", "publickey2");
 
     const file = new File(["encryptedfilecontent"], "testfile.txt", {
       type: "text/plain",
@@ -120,8 +122,8 @@ describe("Yeehaw Docs E2E", () => {
   it("should get files shared with a user", async () => {
     const authService = new AuthService(userDB);
     const fileService = new FileService(userDB, fileDB);
-    await authService.register("fromuser", "publickey1");
-    await authService.register("touser", "publickey2");
+    await authService.register("fromuser", "Password123!", "publickey1");
+    await authService.register("touser", "Password123!", "publickey2");
 
     const file = new File(["encryptedfilecontent"], "testfile.txt", {
       type: "text/plain",
