@@ -9,9 +9,25 @@ export class AuthService {
   }
 
   // Register a new user
-  async register(username: string, password: string, public_key: string) {
+  async register(
+    username: string,
+    password: string,
+    public_key: string,
+    encrypted_private_key: Buffer,
+    salt: Buffer,
+    iv: Buffer,
+    auth_tag: Buffer
+  ) {
     const password_hash = await Bun.password.hash(password);
-    return this.userDB.addUser({ username, password_hash, public_key });
+    return this.userDB.addUser({
+      username,
+      password_hash,
+      public_key,
+      encrypted_private_key,
+      salt,
+      iv,
+      auth_tag,
+    });
   }
 
   // Get a user by username

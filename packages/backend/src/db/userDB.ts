@@ -2,9 +2,13 @@ import { DB } from "../abstract/DB";
 
 export interface User {
   id?: number;
-  password_hash: string;
   username: string;
+  password_hash: string;
   public_key: string;
+  encrypted_private_key: Buffer;
+  salt: Buffer;
+  iv: Buffer;
+  auth_tag: Buffer;
 }
 
 export class UserDB extends DB {
@@ -19,7 +23,11 @@ export class UserDB extends DB {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
-            public_key TEXT NOT NULL
+            public_key TEXT NOT NULL,
+            encrypted_private_key BLOB NOT NULL,
+            salt BLOB NOT NULL,
+            iv BLOB NOT NULL,
+            auth_tag BLOB NOT NULL
         )
     `);
   }
@@ -33,10 +41,18 @@ export class UserDB extends DB {
   async addUser(user: User) {
     return this.db
       .query(
-        `INSERT INTO user (username, password_hash, public_key)
-        VALUES (?, ?, ?) RETURNING *`
+        `INSERT INTO user (username, password_hash, public_key, encrypted_private_key, salt, iv, auth_tag)
+        VALUES (?, ?, ?, ?, ?, ?, ?) returning *`
       )
-      .get(user.username, user.password_hash, user.public_key) as User;
+      .get(
+        user.username,
+        user.password_hash,
+        user.public_key,
+        user.encrypted_private_key,
+        user.salt,
+        user.iv,
+        user.auth_tag
+      ) as User;
   }
 
   // Get a user by username

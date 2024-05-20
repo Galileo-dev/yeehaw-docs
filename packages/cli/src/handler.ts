@@ -1,39 +1,39 @@
 import { treaty } from "@elysiajs/eden";
-import { generateKeyPairSync } from "crypto";
 import type { App } from "../../backend/src";
-import { addUser, getUser } from "./db";
+import { encryptPrivateKey, generateKeyPair } from "./crypto";
+import { addUser, deleteUser, getUser } from "./db";
 
 const app = treaty<App>("localhost:3001");
 
-
-
-
 export async function signupHandler(username: string, password: string) {
-
-  if(!await checkUsernameAvailability(username)){
-    if (!await confirm("Username already exists locally, do you want to overwrite with new user? (you will lose access to the old user's files!)")) {
+  if (!(await checkUsernameAvailability(username))) {
+    if (
+      !(await confirm(
+        "Username already exists locally, do you want to overwrite with new user? (you will lose access to the old user's files!)"
+      ))
+    ) {
       return;
     }
+    await deleteUser(username);
   }
 
+  const { publicKey, privateKey } = await generateKeyPair();
 
-  const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-    modulusLength: 4096,
-    publicKeyEncoding: {
-      type: "spki",
-      format: "pem",
-    },
-    privateKeyEncoding: {
-      type: "pkcs8",
-      format: "pem",
-    },
-  });
+  // encrypt private key with password
+  const { encryptedPrivateKey, salt, iv, authTag } = await encryptPrivateKey(
+    privateKey,
+    password
+  );
 
   // create the user on the server
   const { data, error } = await app.register.post({
     username,
     password,
     public_key: publicKey,
+    encrypted_private_key: encryptedPrivateKey.toString("base64"),
+    salt: salt.toString("base64"),
+    iv: iv.toString("base64"),
+    auth_tag: authTag.toString("base64"),
   });
 
   if (error) {
@@ -46,10 +46,9 @@ export async function signupHandler(username: string, password: string) {
     }
   }
 
-   if (await addUser(username, publicKey, privateKey)) {
+  if (await addUser(username, publicKey, privateKey)) {
     console.log("User created successfully");
   }
-
 }
 
 export async function uploadHandler(
