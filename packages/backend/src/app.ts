@@ -20,12 +20,20 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .get("/version", ({ store: { version } }) => version)
     .post(
       "/register",
-      async ({ body: { username, password, public_key }, authService }) => {
+      async ({
+        body: { username, password, public_key, encrypted_private_key },
+        authService,
+      }) => {
         if (!(await authService.checkUsernameAvailability(username))) {
           throw new Error("Username is already taken");
         }
 
-        return authService.register(username, password, public_key);
+        return authService.register(
+          username,
+          password,
+          public_key,
+          encrypted_private_key
+        );
       },
       {
         // Validate the request body
@@ -34,6 +42,7 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
             username: UsernameModel,
             password: PasswordModel,
             public_key: t.String(),
+            encrypted_private_key: t.String(),
           },
           {
             description: "Expected a username and public key",
@@ -55,6 +64,18 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
         params: t.Object({ username: t.String() }),
         detail: {
           summary: "Get a user by username",
+          tags: ["User"],
+        },
+      }
+    )
+    .get(
+      "/users",
+      async ({ authService }) => {
+        return authService.getUsers();
+      },
+      {
+        detail: {
+          summary: "Get all users",
           tags: ["User"],
         },
       }

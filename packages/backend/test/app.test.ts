@@ -5,9 +5,14 @@ import { FileDB } from "../src/db/fileDB";
 import { User, UserDB } from "../src/db/userDB";
 import { AuthService } from "../src/services/authService";
 import { FileService } from "../src/services/fileService";
+import { registerTestUser } from "./utils";
 
 let userDB: UserDB;
 let fileDB: FileDB;
+
+const mockEncryptedPrivateKey = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString(
+  "base64"
+);
 
 describe("Yeehaw Docs E2E", () => {
   beforeEach(() => {
@@ -39,6 +44,7 @@ describe("Yeehaw Docs E2E", () => {
             username: "testuser",
             password: "Password123!",
             public_key: "publickey123",
+            encrypted_private_key: mockEncryptedPrivateKey,
           }),
           headers: { "Content-Type": "application/json" },
         })
@@ -54,7 +60,7 @@ describe("Yeehaw Docs E2E", () => {
 
   it("should not allow registering a user with an existing username", async () => {
     const authService = new AuthService(userDB);
-    await authService.register("testuser", "Password123!", "publickey123");
+    await registerTestUser(authService);
 
     const response = await app(userDB, fileDB)
       .handle(
@@ -64,6 +70,7 @@ describe("Yeehaw Docs E2E", () => {
             username: "testuser",
             password: "Password123!",
             public_key: "anotherkey456",
+            encrypted_private_key: mockEncryptedPrivateKey,
           }),
           headers: { "Content-Type": "application/json" },
         })
@@ -75,9 +82,42 @@ describe("Yeehaw Docs E2E", () => {
     expect(error.message).toBe("Username is already taken");
   });
 
+  it("encryped private key should be stored in the database", async () => {
+    const response = await app(userDB, fileDB)
+      .handle(
+        new Request("http://localhost:3000/register", {
+          method: "POST",
+          body: JSON.stringify({
+            username: "testuser",
+            password: "Password123!",
+            public_key: "publickey123",
+            encrypted_private_key: mockEncryptedPrivateKey,
+          }),
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+      .then((res: Response) => res);
+
+    expect(response.status).toBe(200);
+    const user: User = await response.json();
+    expect(user.encrypted_private_key).toBe(mockEncryptedPrivateKey);
+
+    const response2 = await app(userDB, fileDB)
+      .handle(
+        new Request("http://localhost:3000/user/testuser", {
+          method: "GET",
+        })
+      )
+      .then((res: Response) => res);
+
+    expect(response2.status).toBe(200);
+    const user2: User = await response2.json();
+    expect(user2.encrypted_private_key).toBe(mockEncryptedPrivateKey);
+  });
+
   it("should get user details by username", async () => {
     const authService = new AuthService(userDB);
-    await authService.register("testuser", "Password123!", "publickey123");
+    await registerTestUser(authService);
 
     const response = await app(userDB, fileDB)
       .handle(
@@ -95,8 +135,8 @@ describe("Yeehaw Docs E2E", () => {
 
   it("should upload a file", async () => {
     const authService = new AuthService(userDB);
-    await authService.register("fromuser", "Password123!", "publickey1");
-    await authService.register("touser", "Password123!", "publickey2");
+    await registerTestUser(authService, "fromuser");
+    await registerTestUser(authService, "touser");
 
     const file = new File(["encryptedfilecontent"], "testfile.txt", {
       type: "text/plain",
@@ -122,8 +162,8 @@ describe("Yeehaw Docs E2E", () => {
   it("should get files shared with a user", async () => {
     const authService = new AuthService(userDB);
     const fileService = new FileService(userDB, fileDB);
-    await authService.register("fromuser", "Password123!", "publickey1");
-    await authService.register("touser", "Password123!", "publickey2");
+    await registerTestUser(authService, "fromuser");
+    await registerTestUser(authService, "touser");
 
     const file = new File(["encryptedfilecontent"], "testfile.txt", {
       type: "text/plain",

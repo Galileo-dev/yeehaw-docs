@@ -2,25 +2,18 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
-import { signupHandler, uploadHandler } from "./handler";
+import {
+  loginHandler,
+  signupHandler,
+  uploadHandler,
+  usersHandler,
+} from "./handler";
 
 const log = console.log;
 
-yargs(hideBin(process.argv))
+const argv = yargs(hideBin(process.argv))
   .updateStrings({
     "Options:": chalk.blue("Options:"),
-  })
-  .command("$0", false, () => {
-    if (process.argv.length > 2) {
-      return;
-    }
-    log(chalk.whiteBright(cowboyBoot));
-    log(chalk.green.bold("Howdy Partner! Welcome to Yeehaw-Docs"));
-    log(
-      chalk.green(
-        "Use the --help flag to see the available commands and options"
-      )
-    );
   })
   .command(
     "register <username> <password>",
@@ -38,6 +31,23 @@ yargs(hideBin(process.argv))
           demandOption: true,
         }),
     (argv) => signupHandler(argv.username, argv.password)
+  )
+  .command(
+    "login <username> <password>",
+    "login to an existing account",
+    (yargs) =>
+      yargs
+        .positional("username", {
+          description: "The username for the account",
+          type: "string",
+          demandOption: true,
+        })
+        .positional("password", {
+          description: "The master password for the account",
+          type: "string",
+          demandOption: true,
+        }),
+    (argv) => loginHandler(argv.username, argv.password)
   )
   .command(
     "upload <file> <recipient> <sender>",
@@ -60,5 +70,35 @@ yargs(hideBin(process.argv))
           demandOption: true,
         }),
     (argv) => uploadHandler(argv.file, argv.recipient, argv.sender)
+  )
+  .command(
+    "users",
+    "List all users",
+    (yargs) => yargs,
+    (argv) => {
+      usersHandler();
+    }
+  )
+  .command(
+    "$0",
+    "The default command",
+    (yargs) => yargs,
+    (argv) => {
+      if (argv._.length > 0) {
+        log(chalk.redBright("Unknown command"));
+        log(
+          chalk.redBright("Use the --help flag to see the available commands")
+        );
+        process.exit(1);
+      }
+
+      log(chalk.whiteBright(cowboyBoot));
+      log(chalk.green.bold("Howdy Partner! Welcome to Yeehaw-Docs"));
+      log(
+        chalk.green(
+          "Use the --help flag to see the available commands and options"
+        )
+      );
+    }
   )
   .parse();

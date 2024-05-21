@@ -37,3 +37,11 @@ export async function getUser(username: string): Promise<User> {
     .query("SELECT * FROM user WHERE username = ?")
     .get(username) as User;
 }
+
+export async function getUsers(): Promise<User[]> {
+  return db.query("SELECT * FROM user").all() as User[];
+}
+
+export async function deleteUser(username: string): Promise<void> {
+  db.query("DELETE FROM user WHERE username = ?").run(username);
+}
