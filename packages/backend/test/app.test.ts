@@ -10,18 +10,9 @@ import { registerTestUser } from "./utils";
 let userDB: UserDB;
 let fileDB: FileDB;
 
-export function base64ToUint8Array(base64: string): Uint8Array {
-  return new Uint8Array(Buffer.from(base64, "base64"));
-}
-
-const mockSalt = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64");
-const mockIV = Buffer.from([9, 10, 11, 12, 13, 14, 15, 16]).toString("base64");
-const mockAuthTag = Buffer.from([17, 18, 19, 20, 21, 22, 23, 24]).toString(
+const mockEncryptedPrivateKey = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString(
   "base64"
 );
-const mockEncryptedPrivateKey = Buffer.from([
-  25, 26, 27, 28, 29, 30, 31, 32,
-]).toString("base64");
 
 describe("Yeehaw Docs E2E", () => {
   beforeEach(() => {
@@ -54,9 +45,6 @@ describe("Yeehaw Docs E2E", () => {
             password: "Password123!",
             public_key: "publickey123",
             encrypted_private_key: mockEncryptedPrivateKey,
-            salt: mockSalt,
-            iv: mockIV,
-            auth_tag: mockAuthTag,
           }),
           headers: { "Content-Type": "application/json" },
         })
@@ -83,9 +71,6 @@ describe("Yeehaw Docs E2E", () => {
             password: "Password123!",
             public_key: "anotherkey456",
             encrypted_private_key: mockEncryptedPrivateKey,
-            salt: mockSalt,
-            iv: mockIV,
-            auth_tag: mockAuthTag,
           }),
           headers: { "Content-Type": "application/json" },
         })
@@ -95,6 +80,39 @@ describe("Yeehaw Docs E2E", () => {
     expect(response.status).toBe(500);
     const error = await response.json();
     expect(error.message).toBe("Username is already taken");
+  });
+
+  it("encryped private key should be stored in the database", async () => {
+    const response = await app(userDB, fileDB)
+      .handle(
+        new Request("http://localhost:3000/register", {
+          method: "POST",
+          body: JSON.stringify({
+            username: "testuser",
+            password: "Password123!",
+            public_key: "publickey123",
+            encrypted_private_key: mockEncryptedPrivateKey,
+          }),
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+      .then((res: Response) => res);
+
+    expect(response.status).toBe(200);
+    const user: User = await response.json();
+    expect(user.encrypted_private_key).toBe(mockEncryptedPrivateKey);
+
+    const response2 = await app(userDB, fileDB)
+      .handle(
+        new Request("http://localhost:3000/user/testuser", {
+          method: "GET",
+        })
+      )
+      .then((res: Response) => res);
+
+    expect(response2.status).toBe(200);
+    const user2: User = await response2.json();
+    expect(user2.encrypted_private_key).toBe(mockEncryptedPrivateKey);
   });
 
   it("should get user details by username", async () => {

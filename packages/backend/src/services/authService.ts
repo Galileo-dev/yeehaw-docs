@@ -13,10 +13,7 @@ export class AuthService {
     username: string,
     password: string,
     public_key: string,
-    encrypted_private_key: Buffer,
-    salt: Buffer,
-    iv: Buffer,
-    auth_tag: Buffer
+    encrypted_private_key: string
   ) {
     const password_hash = await Bun.password.hash(password);
     return this.userDB.addUser({
@@ -24,16 +21,19 @@ export class AuthService {
       password_hash,
       public_key,
       encrypted_private_key,
-      salt,
-      iv,
-      auth_tag,
     });
   }
 
-  // Get a user by username
   async getUser(username: string) {
     const user = await this.userDB.getUser(username);
     return user;
+  }
+
+  async getUsers() {
+    const users = await this.userDB.getUsers();
+    // extract usernames from the users
+    const usernames = users.map((user) => user.username);
+    return usernames;
   }
 
   async checkUsernameAvailability(username: string) {

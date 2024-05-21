@@ -21,31 +21,18 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .post(
       "/register",
       async ({
-        body: {
-          username,
-          password,
-          public_key,
-          encrypted_private_key,
-          salt,
-          iv,
-          auth_tag,
-        },
+        body: { username, password, public_key, encrypted_private_key },
         authService,
       }) => {
         if (!(await authService.checkUsernameAvailability(username))) {
           throw new Error("Username is already taken");
         }
 
-        // decode base64 strings
-
         return authService.register(
           username,
           password,
           public_key,
-          Buffer.from(encrypted_private_key, "base64"),
-          Buffer.from(salt, "base64"),
-          Buffer.from(iv, "base64"),
-          Buffer.from(auth_tag, "base64")
+          encrypted_private_key
         );
       },
       {
@@ -56,9 +43,6 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
             password: PasswordModel,
             public_key: t.String(),
             encrypted_private_key: t.String(),
-            salt: t.String(),
-            iv: t.String(),
-            auth_tag: t.String(),
           },
           {
             description: "Expected a username and public key",
@@ -80,6 +64,18 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
         params: t.Object({ username: t.String() }),
         detail: {
           summary: "Get a user by username",
+          tags: ["User"],
+        },
+      }
+    )
+    .get(
+      "/users",
+      async ({ authService }) => {
+        return authService.getUsers();
+      },
+      {
+        detail: {
+          summary: "Get all users",
           tags: ["User"],
         },
       }

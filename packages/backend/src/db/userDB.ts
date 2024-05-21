@@ -5,10 +5,7 @@ export interface User {
   username: string;
   password_hash: string;
   public_key: string;
-  encrypted_private_key: Buffer;
-  salt: Buffer;
-  iv: Buffer;
-  auth_tag: Buffer;
+  encrypted_private_key: string;
 }
 
 export class UserDB extends DB {
@@ -24,34 +21,31 @@ export class UserDB extends DB {
             username TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             public_key TEXT NOT NULL,
-            encrypted_private_key BLOB NOT NULL,
-            salt BLOB NOT NULL,
-            iv BLOB NOT NULL,
-            auth_tag BLOB NOT NULL
+            encrypted_private_key TEXT NOT NULL
         )
     `);
   }
 
   // Get all users
-  async getUsers() {
-    return this.db.query("SELECT * FROM user").all();
+  async getUsers(): Promise<{ username: string }[]> {
+    return this.db.query("SELECT username FROM user").all() as {
+      username: string;
+    }[];
   }
 
   // Add a new user
   async addUser(user: User) {
     return this.db
       .query(
-        `INSERT INTO user (username, password_hash, public_key, encrypted_private_key, salt, iv, auth_tag)
-        VALUES (?, ?, ?, ?, ?, ?, ?) returning *`
+        `INSERT INTO user (username, password_hash, public_key, encrypted_private_key)
+        VALUES (?, ?, ?, ?) returning *
+      `
       )
       .get(
         user.username,
         user.password_hash,
         user.public_key,
-        user.encrypted_private_key,
-        user.salt,
-        user.iv,
-        user.auth_tag
+        user.encrypted_private_key
       ) as User;
   }
 

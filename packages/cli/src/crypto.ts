@@ -45,12 +45,7 @@ export function generateKeyPair(): Promise<{
 export async function encryptPrivateKey(
   privateKey: string,
   password: string
-): Promise<{
-  encryptedPrivateKey: Buffer;
-  salt: Buffer;
-  iv: Buffer;
-  authTag: Buffer;
-}> {
+): Promise<string> {
   const salt = crypto.randomBytes(16);
   const key = await deriveKey(password, salt);
   const iv = crypto.randomBytes(12);
@@ -62,31 +57,28 @@ export async function encryptPrivateKey(
   ]);
   const authTag = cipher.getAuthTag();
 
-  return {
-    encryptedPrivateKey,
-    salt,
-    iv,
-    authTag,
-  };
+  return Buffer.concat([encryptedPrivateKey, salt, iv, authTag]).toString(
+    "base64"
+  );
 }
 
 export async function decryptPrivateKey(
-  encryptedPrivateKey: Buffer,
   password: string,
-  salt: Buffer,
-  iv: Buffer,
-  authTag: Buffer
+  encryptedPrivateKey: string
 ): Promise<string> {
+  let enc = Buffer.from(encryptedPrivateKey, "base64");
+  const iv = enc.subarray(enc.length - 28, enc.length - 16);
+  const tag = enc.subarray(enc.length - 16);
+  const salt = enc.subarray(enc.length - 44, enc.length - 28);
+  enc = enc.subarray(0, enc.length - 44);
+
   const key = await deriveKey(password, salt);
-
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
-  decipher.setAuthTag(authTag);
-  const privateKey = Buffer.concat([
-    decipher.update(encryptedPrivateKey),
-    decipher.final(),
-  ]);
+  decipher.setAuthTag(tag);
+  let str = decipher.update(enc, undefined, "utf8");
+  str += decipher.final("utf8");
 
-  return privateKey.toString("utf8");
+  return str;
 }
 
 export function encryptData(
