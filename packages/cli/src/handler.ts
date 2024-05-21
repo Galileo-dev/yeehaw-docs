@@ -1,9 +1,12 @@
 import { treaty } from "@elysiajs/eden";
 import chalk from "chalk";
+import * as crypto from "crypto";
 import type { App } from "../../backend/src";
 import {
   decryptPrivateKey,
+  encryptData,
   encryptPrivateKey,
+  encryptSymmetricKey,
   generateKeyPair,
 } from "./crypto";
 import { addUser, deleteUser, getUser, getUsers } from "./db";
@@ -98,15 +101,62 @@ export async function uploadHandler(
   recipient: string,
   sender: string
 ) {
-  const bunFile = await Bun.file(filePath);
+  // get the sender's private key from the local db
+  const user = await getUser(sender);
+  if (!user) {
+    throw new Error("Sender not found, please login first");
+  }
+
+  const senderPrivateKey = user.private_key;
+
+  // retrieve the recipient's public key
+  const recipientPublicKey = await getUserPublicKey(recipient);
+
+  const bunFile = await Bun.file(filePath); // needs to be converted to a file object for elysia to accept it
   const fileBuffer = await bunFile.arrayBuffer();
   const fileName = bunFile.name;
   if (!fileName) {
     throw new Error("File name is not valid");
   }
-  const file = new File([fileBuffer], fileName, { type: bunFile.type });
+
+  const symmetricKey = await crypto.randomBytes(32); // 32 bytes = 256 bits for AES-256
+
+  const fileBufferNode = await Buffer.from(fileBuffer);
+
+  // Encrypt the file using the symmetric key
+  const { encryptedData, iv, authTag } = encryptData(
+    fileBufferNode,
+    symmetricKey
+  );
+
+  // Encrypt the symmetric key using the recipient's public key so only they can decrypt it
+  const encryptedSymmetricKey = encryptSymmetricKey(
+    symmetricKey,
+    recipientPublicKey
+  );
+
+  // Create a digital signature of the file using the sender's private key
+  const sign = crypto.createSign("SHA256");
+  sign.update(encryptedData);
+  sign.end();
+  const signature = sign.sign(senderPrivateKey);
+
+  // tack all the encyption info together
+  const combinedBuffer = Buffer.concat([
+    encryptedData,
+    encryptedSymmetricKey,
+    iv,
+    authTag,
+    signature,
+  ]);
+
+  // we need to bundle into a file object for elysia to accept it
+  const encryptedFile = new File([combinedBuffer], `${fileName}.enc`, {
+    type: bunFile.type,
+  });
+
   const { data, error } = await app.upload.post({
-    file,
+    file: encryptedFile,
     fromUsername: sender,
     toUsername: recipient,
   });
@@ -153,7 +203,54 @@ export async function usersHandler() {
   });
 }
 
+export async function checkHandler(username: string) {
+  const { data, error } = await app.files.shared({ username }).get();
+
+  if (error) {
+    switch (error.status) {
+      case 400:
+        throw error.value;
+
+      default:
+        throw error.value;
+    }
+  }
+
+  if (!data) {
+    throw new Error("User not found");
+  }
+
+  console.log(chalk.green.bold(`Files available for ${username}:`));
+  data.forEach((file) => {
+    console.log(
+      chalk.whiteBright(
+        `• ${file.name} (${file.size}B) from ${file.fromUsername}`
+      )
+    );
+  });
+}
+
 export async function checkUsernameAvailability(username: string) {
   const user = await getUser(username);
   return !user;
+}
+
+export async function getUserPublicKey(username: string) {
+  const { data, error } = await app.user({ username }).get();
+
+  if (error) {
+    switch (error.status) {
+      case 400:
+        throw error.value;
+
+      default:
+        throw error.value;
+    }
+  }
+
+  if (!data) {
+    throw new Error("User not found");
+  }
+
+  return data.public_key;
 }

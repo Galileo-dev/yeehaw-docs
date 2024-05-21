@@ -51,9 +51,15 @@ export class FileDB extends DB {
       ) as YeehawFileDto;
   }
 
-  async getSharedFiles(toUsername: string): Promise<YeehawFile[]> {
+  async getSharedFiles(toUsername: string): Promise<
+    {
+      fromUsername: string;
+      name: string;
+      size: number;
+    }[]
+  > {
     const files = this.db
-      .query(`SELECT * FROM file WHERE toUsername = ?`)
+      .query(`SELECT name, size, fromUsername FROM file WHERE toUsername = ?`)
       .all(toUsername) as YeehawFileDto[];
 
     return files.map((file: any) => ({

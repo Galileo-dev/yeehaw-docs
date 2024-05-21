@@ -41,7 +41,6 @@ export class FileService {
     }
 
     const files = this.fileDB.getSharedFiles(user.username);
-    // replacee the user id's with the usernames
     return files;
   }
 }

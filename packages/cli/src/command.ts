@@ -3,6 +3,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
 import {
+  checkHandler,
   loginHandler,
   signupHandler,
   uploadHandler,
@@ -77,6 +78,19 @@ const argv = yargs(hideBin(process.argv))
     (yargs) => yargs,
     (argv) => {
       usersHandler();
+    }
+  )
+  .command(
+    "check <username>",
+    "Check what files are available for a user",
+    (yargs) =>
+      yargs.positional("username", {
+        description: "The username of the user",
+        type: "string",
+        demandOption: true,
+      }),
+    (argv) => {
+      checkHandler(argv.username);
     }
   )
   .command(
