@@ -1,4 +1,4 @@
-import { FileDB } from "../db/fileDB";
+import { FileDB, YeehawFile } from "../db/fileDB";
 import { User, UserDB } from "../db/userDB";
 
 export class FileService {
@@ -11,7 +11,8 @@ export class FileService {
   }
 
   // Upload an encrypted file to the server and assign it to a user
-  async upload(fromUsername: string, toUsername: string, file: File) {
+  async upload(file: YeehawFile) {
+    const { fromUsername, toUsername } = file;
     const fromUser: User | null = await this.userDB.getUser(fromUsername);
     const toUser: User | null = await this.userDB.getUser(toUsername);
 
@@ -23,13 +24,7 @@ export class FileService {
       throw new Error(`Invalid user: ${toUsername}`);
     }
 
-    return this.fileDB.addFile({
-      fromUsername: fromUser.username,
-      toUsername: toUser.username,
-      name: file.name,
-      size: file.size,
-      data: file,
-    });
+    return this.fileDB.addFile(file);
   }
 
   // Get all files available for a user

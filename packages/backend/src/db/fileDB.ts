@@ -1,11 +1,15 @@
 import { DB } from "../abstract/DB";
 
 export interface YeehawFile {
-  id: number;
+  id?: number;
   fromUsername: string;
   toUsername: string;
   name: string;
   size: number;
+  data: string;
+  iv: string;
+  salt: string;
+  auth_tag: string;
 }
 
 interface YeehawFileDto {
@@ -14,7 +18,6 @@ interface YeehawFileDto {
   toUsername: string;
   name: string;
   size: number;
-  data: File;
 }
 
 export class FileDB extends DB {
@@ -30,24 +33,30 @@ export class FileDB extends DB {
             toUsername TEXT NOT NULL,
             name TEXT NOT NULL,
             size INTEGER NOT NULL,
-            data BLOB NOT NULL
+            data BLOB NOT NULL,
+            iv TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            auth_tag TEXT NOT NULL
         )
     `);
   }
 
-  async addFile(file: YeehawFileDto) {
-    const fileRaw = new Uint8Array(await file.data.arrayBuffer());
+  async addFile(file: YeehawFile) {
+    const fileRaw = Buffer.from(file.data, "base64");
     return this.db
       .query(
-        `INSERT INTO file (fromUsername, toUsername, name, size, data)
-            VALUES (?, ?, ?, ?, ?) RETURNING id`
+        `INSERT INTO file (fromUsername, toUsername, name, size, data, iv, salt, auth_tag)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .get(
         file.fromUsername,
         file.toUsername,
         file.name,
         file.size,
-        fileRaw
+        fileRaw,
+        file.iv,
+        file.salt,
+        file.auth_tag
       ) as YeehawFileDto;
   }
 

@@ -83,15 +83,26 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .post(
       "/upload",
       ({ body: { fromUsername, toUsername, file }, fileService }) => {
-        return fileService.upload(fromUsername, toUsername, file);
+        return fileService.upload({
+          fromUsername,
+          toUsername,
+          ...file,
+        });
       },
       {
         // Validate the request body
         body: t.Object(
           {
-            fromUsername: t.String(),
-            toUsername: t.String(),
-            file: t.File(),
+            fromUsername: UsernameModel,
+            toUsername: UsernameModel,
+            file: t.Object({
+              name: t.String(),
+              size: t.Number(),
+              data: t.String(),
+              iv: t.String(),
+              salt: t.String(),
+              auth_tag: t.String(),
+            }),
           },
           {
             description:
