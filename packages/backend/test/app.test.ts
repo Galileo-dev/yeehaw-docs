@@ -145,11 +145,6 @@ describe("Yeehaw Docs E2E", () => {
       auth_tag: "auth_tag",
     };
 
-    const formData = new FormData();
-    formData.append("fromUsername", "fromuser");
-    formData.append("toUsername", "touser");
-    formData.append("file", JSON.stringify(file)); // Send as a JSON string
-
     const response = await app(userDB, fileDB)
       .handle(
         new Request("http://localhost:3000/upload", {
