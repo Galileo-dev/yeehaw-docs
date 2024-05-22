@@ -3,9 +3,25 @@ import { DB } from "../abstract/DB";
 export interface User {
   id?: number;
   username: string;
+  passwordHash: string;
+  publicKey: string;
+  encryptedPrivateKey: {
+    iv: string;
+    salt: string;
+    data: string;
+    authTag: string;
+  };
+}
+
+export interface UserDto {
+  id?: number;
+  username: string;
   password_hash: string;
   public_key: string;
-  encrypted_private_key: string;
+  iv: string;
+  salt: string;
+  data: string;
+  auth_tag: string;
 }
 
 export class UserDB extends DB {
@@ -14,45 +30,82 @@ export class UserDB extends DB {
   }
 
   async init() {
-    // create user table
-    this.db.run(`
-        CREATE TABLE IF NOT EXISTS user (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            public_key TEXT NOT NULL,
-            encrypted_private_key TEXT NOT NULL
-        )
+    await this.db.run(`
+      CREATE TABLE IF NOT EXISTS user (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        public_key TEXT NOT NULL,
+        iv TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        data TEXT NOT NULL,
+        auth_tag TEXT NOT NULL
+      )
     `);
   }
 
   // Get all users
   async getUsers(): Promise<{ username: string }[]> {
-    return this.db.query("SELECT username FROM user").all() as {
-      username: string;
-    }[];
+    const users = await this.db.query("SELECT username FROM user").all();
+    return users as { username: string }[];
   }
 
   // Add a new user
-  async addUser(user: User) {
-    return this.db
+  async addUser(user: User): Promise<User> {
+    const newUser = (await this.db
       .query(
-        `INSERT INTO user (username, password_hash, public_key, encrypted_private_key)
-        VALUES (?, ?, ?, ?) returning *
-      `
+        `INSERT INTO user (username, password_hash, public_key, iv, salt, data, auth_tag)
+         VALUES (?, ?, ?, ?, ?, ?, ?) returning *`
       )
       .get(
         user.username,
-        user.password_hash,
-        user.public_key,
-        user.encrypted_private_key
-      ) as User;
+        user.passwordHash,
+        user.publicKey,
+        user.encryptedPrivateKey.iv,
+        user.encryptedPrivateKey.salt,
+        user.encryptedPrivateKey.data,
+        user.encryptedPrivateKey.authTag
+      )) as UserDto;
+
+    if (!newUser) {
+      throw new Error("Failed to add user");
+    }
+
+    return {
+      id: newUser.id,
+      username: newUser.username,
+      passwordHash: newUser.password_hash,
+      publicKey: newUser.public_key,
+      encryptedPrivateKey: {
+        iv: newUser.iv,
+        salt: newUser.salt,
+        data: newUser.data,
+        authTag: newUser.auth_tag,
+      },
+    };
   }
 
   // Get a user by username
-  async getUser(username: string) {
-    return this.db
+  async getUser(username: string): Promise<User | null> {
+    const user = (await this.db
       .query("SELECT * FROM user WHERE username = ?")
-      .get(username) as User;
+      .get(username)) as UserDto;
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      passwordHash: user.password_hash,
+      publicKey: user.public_key,
+      encryptedPrivateKey: {
+        iv: user.iv,
+        salt: user.salt,
+        data: user.data,
+        authTag: user.auth_tag,
+      },
+    };
   }
 }

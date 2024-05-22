@@ -34,8 +34,8 @@ export async function signupHandler(username: string, password: string) {
   const { data, error } = await app.register.post({
     username,
     password,
-    public_key: publicKey,
-    encrypted_private_key: encryptedPrivateKey,
+    publicKey,
+    encryptedPrivateKey,
   });
 
   if (error) {
@@ -84,14 +84,14 @@ export async function loginHandler(username: string, password: string) {
 
   const privateKey = await decryptPrivateKey(
     password,
-    Buffer.from(user.encrypted_private_key, "base64").toString("base64")
+    user.encryptedPrivateKey
   );
 
   if (!privateKey) {
     throw new Error("Incorrect password");
   }
 
-  if (await addUser(username, user.public_key, privateKey)) {
+  if (await addUser(username, user.publicKey, privateKey)) {
     console.log("User logged in successfully");
   }
 }
@@ -107,7 +107,7 @@ export async function uploadHandler(
     throw new Error("Sender not found, please login first");
   }
 
-  const senderPrivateKey = user.private_key;
+  const senderPrivateKey = user.privateKey;
 
   // retrieve the recipient's public key
   const recipientPublicKey = await getUserPublicKey(recipient);
@@ -141,24 +141,20 @@ export async function uploadHandler(
   sign.end();
   const signature = sign.sign(senderPrivateKey);
 
-  // tack all the encyption info together
-  const combinedBuffer = Buffer.concat([
-    encryptedData,
-    encryptedSymmetricKey,
-    iv,
-    authTag,
-    signature,
-  ]);
-
   // we need to bundle into a file object for elysia to accept it
-  const encryptedFile = new File([combinedBuffer], `${fileName}.enc`, {
-    type: bunFile.type,
-  });
 
   const { data, error } = await app.upload.post({
-    file: encryptedFile,
     fromUsername: sender,
     toUsername: recipient,
+    file: {
+      name: fileName,
+      size: fileBufferNode.length,
+      data: encryptedData.toString("base64"),
+      iv: iv.toString("base64"),
+      salt: symmetricKey.toString("base64"),
+      authTag: authTag.toString("base64"),
+      signature: signature.toString("base64"),
+    },
   });
 
   if (error) {
@@ -252,5 +248,5 @@ export async function getUserPublicKey(username: string) {
     throw new Error("User not found");
   }
 
-  return data.public_key;
+  return data.publicKey;
 }

@@ -21,18 +21,17 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .post(
       "/register",
       async ({
-        body: { username, password, public_key, encrypted_private_key },
+        body: { username, password, publicKey, encryptedPrivateKey },
         authService,
       }) => {
         if (!(await authService.checkUsernameAvailability(username))) {
           throw new Error("Username is already taken");
         }
-
         return authService.register(
           username,
           password,
-          public_key,
-          encrypted_private_key
+          publicKey,
+          encryptedPrivateKey
         );
       },
       {
@@ -41,8 +40,13 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
           {
             username: UsernameModel,
             password: PasswordModel,
-            public_key: t.String(),
-            encrypted_private_key: t.String(),
+            publicKey: t.String(),
+            encryptedPrivateKey: t.Object({
+              iv: t.String(),
+              salt: t.String(),
+              data: t.String(),
+              authTag: t.String(),
+            }),
           },
           {
             description: "Expected a username and public key",
@@ -86,7 +90,7 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
         return fileService.upload({
           fromUsername,
           toUsername,
-          ...file,
+          file,
         });
       },
       {
@@ -101,7 +105,8 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
               data: t.String(),
               iv: t.String(),
               salt: t.String(),
-              auth_tag: t.String(),
+              authTag: t.String(),
+              signature: t.String(),
             }),
           },
           {
