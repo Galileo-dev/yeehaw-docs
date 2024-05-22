@@ -1,5 +1,8 @@
 import * as crypto from "crypto";
 
+/**
+ * Derives a key from a password and salt using PBKDF2
+ **/
 export async function deriveKey(
   password: string,
   salt: string,
@@ -22,6 +25,9 @@ export async function deriveKey(
   });
 }
 
+/**
+ * Generates a new RSA key pair
+ **/
 export function generateKeyPair(): Promise<{
   publicKey: string;
   privateKey: string;
@@ -41,6 +47,10 @@ export function generateKeyPair(): Promise<{
     );
   });
 }
+
+// ============================================================
+// functions that are used to encrypt and decrypt private keys
+// ============================================================
 
 export async function encryptPrivateKey(
   privateKey: string,
@@ -103,6 +113,10 @@ export async function decryptPrivateKey(
   return decrypted;
 }
 
+// ========================================================
+// function used to encrypt and decrypt data using AES-GCM
+// ========================================================
+
 export function encryptData(
   data: Buffer,
   symmetricKey: Buffer
@@ -135,6 +149,10 @@ export function decryptData(
   return decryptedData;
 }
 
+// ===============================================================
+// functions used to encrypt and decrypt symmetric keys using RSA
+// ===============================================================
+
 export function encryptSymmetricKey(
   symmetricKey: Buffer,
   publicKey: string
@@ -148,6 +166,10 @@ export function decryptSymmetricKey(
 ): Buffer {
   return crypto.privateDecrypt(privateKey, encryptedSymmetricKey);
 }
+
+// ==================================================
+//  functions used to sign and verify data using RSA
+// ==================================================
 
 export function signData(data: Buffer, privateKey: string): Buffer {
   const sign = crypto.createSign("SHA256");
