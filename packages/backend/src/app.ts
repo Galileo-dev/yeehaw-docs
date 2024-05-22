@@ -104,8 +104,8 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
               size: t.Number(),
               data: t.String(),
               iv: t.String(),
-              salt: t.String(),
               authTag: t.String(),
+              encryptedSymmetricKey: t.String(),
               signature: t.String(),
             }),
           },
@@ -117,6 +117,19 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
         detail: {
           summary:
             "Upload an ecrypted file to the server and assign it to a user",
+          tags: ["file"],
+        },
+      }
+    )
+    .get(
+      "/download/:id",
+      async ({ params: { id }, fileService }) => {
+        return fileService.download(id);
+      },
+      {
+        params: t.Object({ id: t.Numeric() }),
+        detail: {
+          summary: "Download a file by ID",
           tags: ["file"],
         },
       }

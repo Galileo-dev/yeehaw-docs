@@ -38,4 +38,14 @@ export class FileService {
     const files = this.fileDB.getSharedFiles(user.username);
     return files;
   }
+
+  async download(id: number) {
+    const file: YeehawFile | null = await this.fileDB.getFile(id);
+
+    if (!file) {
+      throw new Error(`File not found: ${id}`);
+    }
+
+    return file;
+  }
 }

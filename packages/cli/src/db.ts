@@ -43,8 +43,12 @@ export async function addUser(
   return convertToCamelCase(user);
 }
 
-export async function getUser(username: string): Promise<User> {
+export async function getUser(username: string): Promise<User | null> {
   const user = db.query("SELECT * FROM user WHERE username = ?").get(username);
+
+  if (!user) {
+    return null;
+  }
 
   return convertToCamelCase(user);
 }

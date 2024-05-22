@@ -9,8 +9,9 @@ export interface YeehawFile {
     size: number;
     data: string;
     iv: string;
-    salt: string;
     authTag: string;
+    encryptedSymmetricKey: string;
+    signature: string;
   };
 }
 
@@ -36,17 +37,18 @@ export class FileDB extends DB {
             size INTEGER NOT NULL,
             data BLOB NOT NULL,
             iv TEXT NOT NULL,
-            salt TEXT NOT NULL,
-            auth_tag TEXT NOT NULL
+            auth_tag TEXT NOT NULL,
+            encrypted_symmetric_key TEXT NOT NULL,
+            signature TEXT NOT NULL
         )
     `);
   }
 
   async addFile(file: YeehawFile) {
-    return this.db
+    const result = this.db
       .query(
-        `INSERT INTO file (from_username, to_username, name, size, data, iv, salt, auth_tag)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO file (from_username, to_username, name, size, data, iv, auth_tag, encrypted_symmetric_key, signature)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) returning id`
       )
       .get(
         file.fromUsername,
@@ -55,29 +57,52 @@ export class FileDB extends DB {
         file.file.size,
         file.file.data,
         file.file.iv,
-        file.file.salt,
-        file.file.authTag
+        file.file.authTag,
+        file.file.encryptedSymmetricKey,
+        file.file.signature
       );
+
+    return this.convertToCamelCase(result);
   }
 
-  async getSharedFiles(toUsername: string): Promise<
-    {
-      id: number;
-      fromUsername: string;
-      name: string;
-      size: number;
-    }[]
-  > {
-    return this.db
+  async getFile(id: number): Promise<YeehawFile | null> {
+    const file = this.db.query(`SELECT * FROM file WHERE id = ?`).get(id);
+    return file ? this.convertToCamelCase(file) : null;
+  }
+
+  async getSharedFiles(toUsername: string): Promise<YeehawFileDetails[]> {
+    const files = this.db
       .query(
-        `SELECT id, name, size, from_username, to_username FROM file WHERE to_username = ?`
+        `SELECT id, from_username, name, size FROM file WHERE to_username = ?`
       )
-      .all(toUsername)
-      .map((file: any) => ({
-        id: file.id,
-        fromUsername: file.from_username,
+      .all(toUsername);
+
+    return files.map(this.convertDetailsToCamelCase);
+  }
+
+  private convertToCamelCase(file: any): YeehawFile {
+    return {
+      id: file.id,
+      fromUsername: file.from_username,
+      toUsername: file.to_username,
+      file: {
         name: file.name,
         size: file.size,
-      }));
+        data: file.data,
+        iv: file.iv,
+        authTag: file.auth_tag,
+        encryptedSymmetricKey: file.encrypted_symmetric_key,
+        signature: file.signature,
+      },
+    };
+  }
+
+  private convertDetailsToCamelCase(file: any): YeehawFileDetails {
+    return {
+      id: file.id,
+      fromUsername: file.from_username,
+      name: file.name,
+      size: file.size,
+    };
   }
 }
