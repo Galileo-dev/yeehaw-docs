@@ -2,6 +2,8 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
+import * as readlineSync from "readline-sync";
+
 import {
   checkHandler,
   loginHandler,
@@ -17,7 +19,7 @@ const argv = yargs(hideBin(process.argv))
     "Options:": chalk.blue("Options:"),
   })
   .command(
-    "register <username> <password>",
+    "register <username>",
     "Sign up for a new account",
     (yargs) =>
       yargs
@@ -25,16 +27,16 @@ const argv = yargs(hideBin(process.argv))
           description: "The username for the new account",
           type: "string",
           demandOption: true,
-        })
-        .positional("password", {
-          description: "The password for the new account",
-          type: "string",
-          demandOption: true,
         }),
-    (argv) => signupHandler(argv.username, argv.password)
+    (argv) =>{ 
+      const password = readlineSync.question("Enter your password: ", {
+        hideEchoBack: true,
+      });
+      signupHandler(argv.username, password)
+    }
   )
   .command(
-    "login <username> <password>",
+    "login <username>",
     "login to an existing account",
     (yargs) =>
       yargs
@@ -42,13 +44,13 @@ const argv = yargs(hideBin(process.argv))
           description: "The username for the account",
           type: "string",
           demandOption: true,
-        })
-        .positional("password", {
-          description: "The master password for the account",
-          type: "string",
-          demandOption: true,
         }),
-    (argv) => loginHandler(argv.username, argv.password)
+    (argv) => {
+      const password = readlineSync.question("Enter your password: ", {
+        hideEchoBack: true,
+      });
+      loginHandler(argv.username, password);
+    }
   )
   .command(
     "upload <file> <recipient> <sender>",
