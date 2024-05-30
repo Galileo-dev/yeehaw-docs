@@ -14,7 +14,7 @@ export const PasswordModel = t.String({
   default: "Password123!",
   pattern: "^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$",
   description:
-    "A password must have minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character",
+    "A password must have minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character. Please try again.",
 });
 
 export const PublicKeyModel = t.String({

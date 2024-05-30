@@ -3,6 +3,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
 import * as readlineSync from "readline-sync";
+import { PasswordModel } from "@backend/models";
 
 import {
   checkHandler,
@@ -12,9 +13,19 @@ import {
   usersHandler,
 } from "./handler";
 
+async function validatePassword(password: string): Promise<void> {
+  if (typeof PasswordModel.pattern === 'undefined') {
+    throw new Error('Password pattern is undefined');
+  }
+  const passwordRegex = new RegExp(PasswordModel.pattern);
+  if (!passwordRegex.test(password)) {
+    throw new Error(PasswordModel.description);
+  }
+}
 const log = console.log;
 
-const argv = yargs(hideBin(process.argv))
+
+const parser = yargs(hideBin(process.argv))
   .updateStrings({
     "Options:": chalk.blue("Options:"),
   })
@@ -28,10 +39,11 @@ const argv = yargs(hideBin(process.argv))
           type: "string",
           demandOption: true,
         }),
-    (argv) =>{ 
+    async (argv) => {
       const password = readlineSync.question("Enter your password: ", {
         hideEchoBack: true,
       });
+      await validatePassword(password);
       signupHandler(argv.username, password)
     }
   )
@@ -117,4 +129,13 @@ const argv = yargs(hideBin(process.argv))
       );
     }
   )
-  .parse();
+  .fail(false);
+try {
+  await parser.parse();
+} catch (err) {
+  if (err instanceof Error) {
+    console.error(err.message);
+  } else {
+    console.error(err);
+  }
+}
