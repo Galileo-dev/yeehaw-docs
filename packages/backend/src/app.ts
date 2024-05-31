@@ -21,18 +21,17 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .post(
       "/register",
       async ({
-        body: { username, password, public_key, encrypted_private_key },
+        body: { username, password, publicKey, encryptedPrivateKey },
         authService,
       }) => {
         if (!(await authService.checkUsernameAvailability(username))) {
           throw new Error("Username is already taken");
         }
-
         return authService.register(
           username,
           password,
-          public_key,
-          encrypted_private_key
+          publicKey,
+          encryptedPrivateKey
         );
       },
       {
@@ -41,8 +40,13 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
           {
             username: UsernameModel,
             password: PasswordModel,
-            public_key: t.String(),
-            encrypted_private_key: t.String(),
+            publicKey: t.String(),
+            encryptedPrivateKey: t.Object({
+              iv: t.String(),
+              salt: t.String(),
+              data: t.String(),
+              authTag: t.String(),
+            }),
           },
           {
             description: "Expected a username and public key",
@@ -83,15 +87,27 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .post(
       "/upload",
       ({ body: { fromUsername, toUsername, file }, fileService }) => {
-        return fileService.upload(fromUsername, toUsername, file);
+        return fileService.upload({
+          fromUsername,
+          toUsername,
+          file,
+        });
       },
       {
         // Validate the request body
         body: t.Object(
           {
-            fromUsername: t.String(),
-            toUsername: t.String(),
-            file: t.File(),
+            fromUsername: UsernameModel,
+            toUsername: UsernameModel,
+            file: t.Object({
+              name: t.String(),
+              size: t.Number(),
+              data: t.String(),
+              iv: t.String(),
+              authTag: t.String(),
+              encryptedSymmetricKey: t.String(),
+              signature: t.String(),
+            }),
           },
           {
             description:
@@ -101,6 +117,19 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
         detail: {
           summary:
             "Upload an ecrypted file to the server and assign it to a user",
+          tags: ["file"],
+        },
+      }
+    )
+    .get(
+      "/download/:id",
+      async ({ params: { id }, fileService }) => {
+        return fileService.download(id);
+      },
+      {
+        params: t.Object({ id: t.Numeric() }),
+        detail: {
+          summary: "Download a file by ID",
           tags: ["file"],
         },
       }

@@ -1,136 +1,101 @@
 // test/index.test.ts
+import { treaty } from "@elysiajs/eden";
 import { beforeEach, describe, expect, it } from "bun:test";
+import { App } from "../src";
 import { app } from "../src/app";
-import { FileDB } from "../src/db/fileDB";
-import { User, UserDB } from "../src/db/userDB";
+import { FileDB, YeehawFile } from "../src/db/fileDB";
+import { UserDB } from "../src/db/userDB";
 import { AuthService } from "../src/services/authService";
 import { FileService } from "../src/services/fileService";
 import { registerTestUser } from "./utils";
 
+const mockEncryptedPrivateKey = {
+  iv: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  salt: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  data: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  authTag: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+};
+
+const mockEncryptedFile = {
+  name: "testfile.txt",
+  size: 123,
+  data: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  iv: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  salt: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  authTag: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  signature: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+};
+
 let userDB: UserDB;
 let fileDB: FileDB;
+let api: ReturnType<typeof treaty<App>>;
 
-const mockEncryptedPrivateKey = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString(
-  "base64"
-);
+beforeEach(() => {
+  userDB = new UserDB(":memory:");
+  fileDB = new FileDB(":memory:");
+  const App = app(userDB, fileDB);
+  api = treaty(App);
+});
 
 describe("Yeehaw Docs E2E", () => {
-  beforeEach(() => {
-    userDB = new UserDB(":memory:");
-    fileDB = new FileDB(":memory:");
-  });
-
   it("should return the correct welcome message with version", async () => {
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/", {
-          method: "GET",
-        })
-      )
-      .then((res: Response) => res);
-
-    // should half match the response as the version is undefined in test
-    expect(await response.text()).toMatch(
-      "Hello, Welcome to the super secure file server\n\n"
+    const { data, error } = await api.index.get();
+    expect(data).toBe(
+      "Hello, Welcome to the super secure file server\n\n(version: undefined)"
     );
+    expect(error).toBeNull();
   });
 
   it("should register a new user and assign public key", async () => {
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/register", {
-          method: "POST",
-          body: JSON.stringify({
-            username: "testuser",
-            password: "Password123!",
-            public_key: "publickey123",
-            encrypted_private_key: mockEncryptedPrivateKey,
-          }),
-          headers: { "Content-Type": "application/json" },
-        })
-      )
-      .then((res: Response) => res);
-
-    expect(response.status).toBe(200);
-    const user: User = await response.json();
-    expect(user.username).toBe("testuser");
-    expect(user.public_key).toBe("publickey123");
-    expect(user.id).toBeDefined();
+    const { data, error } = await api.register.post({
+      username: "testuser",
+      password: "Password123!",
+      publicKey: "publickey123",
+      encryptedPrivateKey: mockEncryptedPrivateKey,
+    });
+    expect(data).toBeDefined();
+    expect(data?.username).toBe("testuser");
+    expect(data?.publicKey).toBe("publickey123");
+    expect(data?.id).toBeDefined();
   });
 
   it("should not allow registering a user with an existing username", async () => {
     const authService = new AuthService(userDB);
     await registerTestUser(authService);
 
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/register", {
-          method: "POST",
-          body: JSON.stringify({
-            username: "testuser",
-            password: "Password123!",
-            public_key: "anotherkey456",
-            encrypted_private_key: mockEncryptedPrivateKey,
-          }),
-          headers: { "Content-Type": "application/json" },
-        })
-      )
-      .then((res: Response) => res);
-
-    expect(response.status).toBe(500);
-    const error = await response.json();
-    expect(error.message).toBe("Username is already taken");
+    const { error } = await api.register.post({
+      username: "testuser",
+      password: "Password123!",
+      publicKey: "anotherkey456",
+      encryptedPrivateKey: mockEncryptedPrivateKey,
+    });
+    expect(error).toBeDefined();
+    expect(error?.value).toBe(
+      JSON.stringify({ name: "Error", message: "Username is already taken" })
+    );
   });
 
-  it("encryped private key should be stored in the database", async () => {
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/register", {
-          method: "POST",
-          body: JSON.stringify({
-            username: "testuser",
-            password: "Password123!",
-            public_key: "publickey123",
-            encrypted_private_key: mockEncryptedPrivateKey,
-          }),
-          headers: { "Content-Type": "application/json" },
-        })
-      )
-      .then((res: Response) => res);
+  it("encrypted private key should be stored in the database", async () => {
+    const { data } = await api.register.post({
+      username: "testuser",
+      password: "Password123!",
+      publicKey: "publickey123",
+      encryptedPrivateKey: mockEncryptedPrivateKey,
+    });
 
-    expect(response.status).toBe(200);
-    const user: User = await response.json();
-    expect(user.encrypted_private_key).toBe(mockEncryptedPrivateKey);
-
-    const response2 = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/user/testuser", {
-          method: "GET",
-        })
-      )
-      .then((res: Response) => res);
-
-    expect(response2.status).toBe(200);
-    const user2: User = await response2.json();
-    expect(user2.encrypted_private_key).toBe(mockEncryptedPrivateKey);
+    const { data: fetchedUser } = await api
+      .user({ username: "testuser" })
+      .get();
+    expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
   });
 
   it("should get user details by username", async () => {
     const authService = new AuthService(userDB);
     await registerTestUser(authService);
 
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/user/testuser", {
-          method: "GET",
-        })
-      )
-      .then((res: Response) => res);
-
-    expect(response.status).toBe(200);
-    const user = await response.json();
-    expect(user.username).toBe("testuser");
-    expect(user.public_key).toBe("publickey123");
+    const { data } = await api.user({ username: "testuser" }).get();
+    expect(data?.username).toBe("testuser");
+    expect(data?.publicKey).toBe("publickey123");
   });
 
   it("should upload a file", async () => {
@@ -138,25 +103,12 @@ describe("Yeehaw Docs E2E", () => {
     await registerTestUser(authService, "fromuser");
     await registerTestUser(authService, "touser");
 
-    const file = new File(["encryptedfilecontent"], "testfile.txt", {
-      type: "text/plain",
+    const { error } = await api.upload.post({
+      fromUsername: "fromuser",
+      toUsername: "touser",
+      file: mockEncryptedFile,
     });
-
-    const formData = new FormData();
-    formData.append("fromUsername", "fromuser");
-    formData.append("toUsername", "touser");
-    formData.append("file", file);
-
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/upload", {
-          method: "POST",
-          body: formData,
-        })
-      )
-      .then((res: Response) => res);
-
-    expect(response.status).toBe(200);
+    expect(error).toBeNull();
   });
 
   it("should get files shared with a user", async () => {
@@ -165,28 +117,22 @@ describe("Yeehaw Docs E2E", () => {
     await registerTestUser(authService, "fromuser");
     await registerTestUser(authService, "touser");
 
-    const file = new File(["encryptedfilecontent"], "testfile.txt", {
-      type: "text/plain",
-    });
-    await fileService.upload("fromuser", "touser", file);
+    const file: YeehawFile = {
+      fromUsername: "fromuser",
+      toUsername: "touser",
+      file: mockEncryptedFile,
+    };
 
-    const response = await app(userDB, fileDB)
-      .handle(
-        new Request("http://localhost:3000/files/shared/touser", {
-          method: "GET",
-        })
-      )
-      .then((res: Response) => res);
+    await fileService.upload(file);
 
-    expect(response.status).toBe(200);
-    const files = await response.json();
-    expect(files).toEqual([
+    const { data } = await api.files.shared({ username: "touser" }).get();
+
+    expect(data).toEqual([
       {
         id: 1,
         fromUsername: "fromuser",
-        toUsername: "touser",
         name: "testfile.txt",
-        size: file.size,
+        size: mockEncryptedFile.size,
       },
     ]);
   });

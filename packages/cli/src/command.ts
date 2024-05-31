@@ -7,6 +7,7 @@ import { PasswordModel } from "@backend/models";
 
 import {
   checkHandler,
+  downloadHandler,
   loginHandler,
   signupHandler,
   uploadHandler,
@@ -105,6 +106,26 @@ const parser = yargs(hideBin(process.argv))
       }),
     (argv) => {
       checkHandler(argv.username);
+    }
+  )
+  .command(
+    "download <fileId> <recipient>",
+    "Download a file from a recipient",
+    (yargs) =>
+      yargs
+        .positional("fileId", {
+          description: "The id of the file",
+          type: "number",
+          demandOption: true,
+        })
+        .positional("recipient", {
+          description: "The recipient's username",
+          type: "string",
+          demandOption: true,
+        }),
+
+    (argv) => {
+      downloadHandler(argv.fileId, argv.recipient);
     }
   )
   .command(

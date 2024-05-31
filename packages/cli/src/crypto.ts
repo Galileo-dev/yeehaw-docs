@@ -1,8 +1,11 @@
 import * as crypto from "crypto";
 
+/**
+ * Derives a key from a password and salt using PBKDF2
+ **/
 export async function deriveKey(
   password: string,
-  salt: Buffer,
+  salt: string,
   iterations: number = 100000,
   keyLength: number = 32,
   digest: string = "sha256"
@@ -22,6 +25,9 @@ export async function deriveKey(
   });
 }
 
+/**
+ * Generates a new RSA key pair
+ **/
 export function generateKeyPair(): Promise<{
   publicKey: string;
   privateKey: string;
@@ -42,12 +48,21 @@ export function generateKeyPair(): Promise<{
   });
 }
 
+// ============================================================
+// functions that are used to encrypt and decrypt private keys
+// ============================================================
+
 export async function encryptPrivateKey(
   privateKey: string,
   password: string
-): Promise<string> {
+): Promise<{
+  iv: string;
+  salt: string;
+  data: string;
+  authTag: string;
+}> {
   const salt = crypto.randomBytes(16);
-  const key = await deriveKey(password, salt);
+  const key = await deriveKey(password, salt.toString("base64"));
   const iv = crypto.randomBytes(12);
 
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
@@ -57,29 +72,50 @@ export async function encryptPrivateKey(
   ]);
   const authTag = cipher.getAuthTag();
 
-  return Buffer.concat([encryptedPrivateKey, salt, iv, authTag]).toString(
-    "base64"
-  );
+  return {
+    iv: iv.toString("base64"),
+    salt: salt.toString("base64"),
+    data: encryptedPrivateKey.toString("base64"),
+    authTag: authTag.toString("base64"),
+  };
 }
 
 export async function decryptPrivateKey(
   password: string,
-  encryptedPrivateKey: string
+  {
+    iv,
+    salt,
+    data,
+    authTag,
+  }: {
+    iv: string;
+    salt: string;
+    data: string;
+    authTag: string;
+  }
 ): Promise<string> {
-  let enc = Buffer.from(encryptedPrivateKey, "base64");
-  const iv = enc.subarray(enc.length - 28, enc.length - 16);
-  const tag = enc.subarray(enc.length - 16);
-  const salt = enc.subarray(enc.length - 44, enc.length - 28);
-  enc = enc.subarray(0, enc.length - 44);
-
   const key = await deriveKey(password, salt);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
-  decipher.setAuthTag(tag);
-  let str = decipher.update(enc, undefined, "utf8");
-  str += decipher.final("utf8");
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    key,
+    Buffer.from(iv, "base64")
+  );
+  decipher.setAuthTag(Buffer.from(authTag, "base64"));
 
-  return str;
+  let decrypted = decipher.update(
+    Buffer.from(data, "base64"),
+    undefined,
+    "utf8"
+  );
+  decrypted += decipher.final("utf8");
+
+  console.log("Decrypted data:", decrypted);
+  return decrypted;
 }
+
+// ========================================================
+// function used to encrypt and decrypt data using AES-GCM
+// ========================================================
 
 export function encryptData(
   data: Buffer,
@@ -113,6 +149,10 @@ export function decryptData(
   return decryptedData;
 }
 
+// ===============================================================
+// functions used to encrypt and decrypt symmetric keys using RSA
+// ===============================================================
+
 export function encryptSymmetricKey(
   symmetricKey: Buffer,
   publicKey: string
@@ -125,4 +165,26 @@ export function decryptSymmetricKey(
   privateKey: string
 ): Buffer {
   return crypto.privateDecrypt(privateKey, encryptedSymmetricKey);
+}
+
+// ==================================================
+//  functions used to sign and verify data using RSA
+// ==================================================
+
+export function signData(data: Buffer, privateKey: string): Buffer {
+  const sign = crypto.createSign("SHA256");
+  sign.update(data);
+  sign.end();
+  return sign.sign(privateKey);
+}
+
+export function verifySignature(
+  data: Buffer,
+  signature: Buffer,
+  publicKey: string
+): boolean {
+  const verify = crypto.createVerify("SHA256");
+  verify.update(data);
+  verify.end();
+  return verify.verify(publicKey, signature);
 }

@@ -1,20 +1,25 @@
 import { DB } from "../abstract/DB";
 
 export interface YeehawFile {
-  id: number;
-  fromUsername: string;
-  toUsername: string;
-  name: string;
-  size: number;
-}
-
-interface YeehawFileDto {
   id?: number;
   fromUsername: string;
   toUsername: string;
+  file: {
+    name: string;
+    size: number;
+    data: string;
+    iv: string;
+    authTag: string;
+    encryptedSymmetricKey: string;
+    signature: string;
+  };
+}
+
+interface YeehawFileDetails {
+  id: number;
+  fromUsername: string;
   name: string;
   size: number;
-  data: File;
 }
 
 export class FileDB extends DB {
@@ -26,48 +31,78 @@ export class FileDB extends DB {
     this.db.run(`
         CREATE TABLE IF NOT EXISTS file (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fromUsername TEXT NOT NULL,
-            toUsername TEXT NOT NULL,
+            from_username TEXT NOT NULL,
+            to_username TEXT NOT NULL,
             name TEXT NOT NULL,
             size INTEGER NOT NULL,
-            data BLOB NOT NULL
+            data BLOB NOT NULL,
+            iv TEXT NOT NULL,
+            auth_tag TEXT NOT NULL,
+            encrypted_symmetric_key TEXT NOT NULL,
+            signature TEXT NOT NULL
         )
     `);
   }
 
-  async addFile(file: YeehawFileDto) {
-    const fileRaw = new Uint8Array(await file.data.arrayBuffer());
-    return this.db
+  async addFile(file: YeehawFile) {
+    const result = this.db
       .query(
-        `INSERT INTO file (fromUsername, toUsername, name, size, data)
-            VALUES (?, ?, ?, ?, ?) RETURNING id`
+        `INSERT INTO file (from_username, to_username, name, size, data, iv, auth_tag, encrypted_symmetric_key, signature)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) returning id`
       )
       .get(
         file.fromUsername,
         file.toUsername,
-        file.name,
-        file.size,
-        fileRaw
-      ) as YeehawFileDto;
+        file.file.name,
+        file.file.size,
+        file.file.data,
+        file.file.iv,
+        file.file.authTag,
+        file.file.encryptedSymmetricKey,
+        file.file.signature
+      );
+
+    return this.convertToCamelCase(result);
   }
 
-  async getSharedFiles(toUsername: string): Promise<
-    {
-      fromUsername: string;
-      name: string;
-      size: number;
-    }[]
-  > {
-    const files = this.db
-      .query(`SELECT name, size, fromUsername FROM file WHERE toUsername = ?`)
-      .all(toUsername) as YeehawFileDto[];
+  async getFile(id: number): Promise<YeehawFile | null> {
+    const file = this.db.query(`SELECT * FROM file WHERE id = ?`).get(id);
+    return file ? this.convertToCamelCase(file) : null;
+  }
 
-    return files.map((file: any) => ({
+  async getSharedFiles(toUsername: string): Promise<YeehawFileDetails[]> {
+    const files = this.db
+      .query(
+        `SELECT id, from_username, name, size FROM file WHERE to_username = ?`
+      )
+      .all(toUsername);
+
+    return files.map(this.convertDetailsToCamelCase);
+  }
+
+  private convertToCamelCase(file: any): YeehawFile {
+    return {
       id: file.id,
-      fromUsername: file.fromUsername,
-      toUsername: file.toUsername,
+      fromUsername: file.from_username,
+      toUsername: file.to_username,
+      file: {
+        name: file.name,
+        size: file.size,
+        data: file.data,
+        iv: file.iv,
+        authTag: file.auth_tag,
+        encryptedSymmetricKey: file.encrypted_symmetric_key,
+        signature: file.signature,
+      },
+    };
+  }
+
+  private convertDetailsToCamelCase(file: any): YeehawFileDetails {
+    return {
+      id: file.id,
+      fromUsername: file.from_username,
       name: file.name,
       size: file.size,
-    }));
+    };
   }
 }
