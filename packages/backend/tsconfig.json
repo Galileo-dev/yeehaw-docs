@@ -98,12 +98,6 @@
 
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true   ,     
-    "composite": true          ,
-    "outDir": "./dist",        
-    "declaration": true,    
-    "rootDir": "./src",
-  }, 
-  "include": ["./src/**/*" ],
-  
+    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+  }
 }
