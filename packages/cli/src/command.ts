@@ -1,11 +1,9 @@
 import chalk from "chalk";
+import * as readlineSync from "readline-sync";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
-import { PasswordModel } from "@backend/models";
-const read = require('read');
-import * as readlineSync from 'readline-sync';
-
+const read = require("read");
 
 import {
   checkHandler,
@@ -16,18 +14,7 @@ import {
   usersHandler,
 } from "./handler";
 
-async function validatePassword(password: string): Promise<void> {
-  if (typeof PasswordModel.pattern === 'undefined') {
-    throw new Error('Password pattern is undefined');
-  }
-  const passwordRegex = new RegExp(PasswordModel.pattern);
-  if (!passwordRegex.test(password)) {
-    throw new Error(PasswordModel.description);
-  }
-}
-
 const log = console.log;
-
 
 const parser = yargs(hideBin(process.argv))
   .updateStrings({
@@ -37,40 +24,38 @@ const parser = yargs(hideBin(process.argv))
     "register <username>",
     "Sign up for a new account",
     (yargs) =>
-      yargs
-        .positional("username", {
-          description: "The username for the new account",
-          type: "string",
-          demandOption: true,
-        }),
+      yargs.positional("username", {
+        description: "The username for the new account",
+        type: "string",
+        demandOption: true,
+      }),
 
     async (argv) => {
-      const password = readlineSync.question('Enter Your Password: ', {
-        hideEchoBack: true, 
-        mask: '' 
+      const password = readlineSync.question("Enter Your Password: ", {
+        hideEchoBack: true,
+        mask: "",
       });
-        await validatePassword(password);
-        signupHandler(argv.username, password);
-    })
+      await signupHandler(argv.username, password);
+    }
+  )
 
   .command(
     "login <username>",
     "login to an existing account",
     (yargs) =>
-      yargs
-        .positional("username", {
-          description: "The username for the account",
-          type: "string",
-          demandOption: true,
-        }),
+      yargs.positional("username", {
+        description: "The username for the account",
+        type: "string",
+        demandOption: true,
+      }),
     async (argv) => {
-      const password = readlineSync.question('Enter Your Password: ', {
-        hideEchoBack: true, 
-        mask: '' 
+      const password = readlineSync.question("Enter Your Password: ", {
+        hideEchoBack: true,
+        mask: "",
       });
-      await validatePassword(password);
-      loginHandler(argv.username, password);
-    })
+      await loginHandler(argv.username, password);
+    }
+  )
   .command(
     "upload <file> <recipient> <sender>",
     "Upload a file to a recipient",
@@ -156,13 +141,4 @@ const parser = yargs(hideBin(process.argv))
       );
     }
   )
-  .fail(false);
-try {
-  await parser.parse();
-} catch (err) {
-  if (err instanceof Error) {
-    console.error(err.message);
-  } else {
-    console.error(err);
-  }
-}
+  .parse();

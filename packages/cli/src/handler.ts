@@ -15,6 +15,7 @@ import {
   verifySignature,
 } from "./crypto";
 import { addUser, deleteUser, getUser, getUsers } from "./db";
+import { formatValidationErrors } from "./error";
 import { getFile, getUserPublicKey } from "./server";
 
 const app = treaty<App>("localhost:3001");
@@ -46,9 +47,8 @@ export async function signupHandler(username: string, password: string) {
 
   if (error) {
     switch (error.status) {
-      case 400:
-        throw error.value;
-
+      case 422:
+        throw formatValidationErrors(error.value);
       default:
         throw error.value;
     }
@@ -76,9 +76,8 @@ export async function loginHandler(username: string, password: string) {
 
   if (error) {
     switch (error.status) {
-      case 400:
-        throw error.value;
-
+      case 422:
+        throw formatValidationErrors(error.value);
       default:
         throw error.value;
     }
@@ -163,8 +162,8 @@ export async function uploadHandler(
 
   if (error) {
     switch (error.status) {
-      case 400:
-        throw error.value;
+      case 422:
+        throw formatValidationErrors(error.value);
 
       default:
         throw error.value;
@@ -178,8 +177,8 @@ export async function usersHandler() {
   const { data, error } = await app.users.get();
   if (error) {
     switch (error.status) {
-      case 400:
-        throw error.value;
+      case 422:
+        throw formatValidationErrors(error.value);
 
       default:
         throw error.value;
@@ -208,8 +207,8 @@ export async function checkHandler(username: string) {
 
   if (error) {
     switch (error.status) {
-      case 400:
-        throw error.value;
+      case 422:
+        throw formatValidationErrors(error.value);
 
       default:
         throw error.value;
