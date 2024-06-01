@@ -23,6 +23,9 @@ const mockEncryptedFile = {
   iv: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
   salt: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
   authTag: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  encryptedSymmetricKey: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString(
+    "base64"
+  ),
   signature: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
 };
 

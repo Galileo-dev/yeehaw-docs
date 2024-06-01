@@ -1,7 +1,10 @@
 import chalk from "chalk";
+import * as readlineSync from "readline-sync";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
+const read = require("read");
+
 import {
   checkHandler,
   downloadHandler,
@@ -13,44 +16,45 @@ import {
 
 const log = console.log;
 
-const argv = yargs(hideBin(process.argv))
-  .scriptName("yeehaw")
+const parser = yargs(hideBin(process.argv))
   .updateStrings({
     "Options:": chalk.blue("Options:"),
   })
   .command(
-    "register <username> <password>",
+    "register <username>",
     "Sign up for a new account",
     (yargs) =>
-      yargs
-        .positional("username", {
-          description: "The username for the new account",
-          type: "string",
-          demandOption: true,
-        })
-        .positional("password", {
-          description: "The password for the new account",
-          type: "string",
-          demandOption: true,
-        }),
-    (argv) => signupHandler(argv.username, argv.password)
+      yargs.positional("username", {
+        description: "The username for the new account",
+        type: "string",
+        demandOption: true,
+      }),
+
+    async (argv) => {
+      const password = readlineSync.question("Enter Your Password: ", {
+        hideEchoBack: true,
+        mask: "",
+      });
+      await signupHandler(argv.username, password);
+    }
   )
+
   .command(
-    "login <username> <password>",
+    "login <username>",
     "login to an existing account",
     (yargs) =>
-      yargs
-        .positional("username", {
-          description: "The username for the account",
-          type: "string",
-          demandOption: true,
-        })
-        .positional("password", {
-          description: "The master password for the account",
-          type: "string",
-          demandOption: true,
-        }),
-    (argv) => loginHandler(argv.username, argv.password)
+      yargs.positional("username", {
+        description: "The username for the account",
+        type: "string",
+        demandOption: true,
+      }),
+    async (argv) => {
+      const password = readlineSync.question("Enter Your Password: ", {
+        hideEchoBack: true,
+        mask: "",
+      });
+      await loginHandler(argv.username, password);
+    }
   )
   .command(
     "upload <file> <recipient> <sender>",

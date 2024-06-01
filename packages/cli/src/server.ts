@@ -1,5 +1,6 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "../../backend/src";
+import { formatValidationErrors } from "./error";
 
 const app = treaty<App>("localhost:3001");
 
@@ -8,9 +9,8 @@ export async function getUserPublicKey(username: string) {
 
   if (error)
     switch (error.status) {
-      case 400:
-        // Error type will be narrow down
-        throw error.value;
+      case 422:
+        throw formatValidationErrors(error.value);
 
       default:
         throw error.value;
@@ -26,9 +26,8 @@ export async function getFile(id: number) {
 
   if (error) {
     switch (error.status) {
-      case 400:
-        throw error.value;
-
+      case 422:
+        throw formatValidationErrors(error.value);
       default:
         throw error.value;
     }
