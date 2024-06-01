@@ -1,5 +1,6 @@
 import { swagger } from "@elysiajs/swagger";
 import { Elysia, t } from "elysia";
+import { rateLimit } from 'elysia-rate-limit'
 import { PasswordModel, UsernameModel } from "../models";
 import { FileDB } from "./db/fileDB";
 import { UserDB } from "./db/userDB";
@@ -9,6 +10,10 @@ import { FileService } from "./services/fileService";
 export const app = (userDB: UserDB, fileDB: FileDB) =>
   new Elysia()
     .use(swagger())
+    .use(rateLimit({
+      duration: 60000, 
+      max: 15
+    }))
     .decorate({ authService: new AuthService(userDB) })
     .decorate({ fileService: new FileService(userDB, fileDB) })
     .state("version", process.env.npm_package_version)
