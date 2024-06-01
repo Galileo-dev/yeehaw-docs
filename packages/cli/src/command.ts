@@ -3,7 +3,9 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
 import { PasswordModel } from "@backend/models";
-import PromptPassword from "prompt-password";
+const read = require('read');
+import * as readlineSync from 'readline-sync';
+
 
 import {
   checkHandler,
@@ -25,11 +27,7 @@ async function validatePassword(password: string): Promise<void> {
 }
 
 const log = console.log;
-const prompt = new PromptPassword({
-  type: "password",
-  message: "Enter your password",
-  name: "password",
-});
+
 
 const parser = yargs(hideBin(process.argv))
   .updateStrings({
@@ -47,9 +45,12 @@ const parser = yargs(hideBin(process.argv))
         }),
 
     async (argv) => {
-      const password = await prompt.run();
-      await validatePassword(password);
-      signupHandler(argv.username, password);
+      const password = readlineSync.question('Enter Your Password: ', {
+        hideEchoBack: true, 
+        mask: '' 
+      });
+        await validatePassword(password);
+        signupHandler(argv.username, password);
     })
 
   .command(
@@ -63,7 +64,10 @@ const parser = yargs(hideBin(process.argv))
           demandOption: true,
         }),
     async (argv) => {
-      const password = await prompt.run();
+      const password = readlineSync.question('Enter Your Password: ', {
+        hideEchoBack: true, 
+        mask: '' 
+      });
       await validatePassword(password);
       loginHandler(argv.username, password);
     })
