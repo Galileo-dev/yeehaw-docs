@@ -9,6 +9,7 @@
   "dependencies": {
     "@types/readline-sync": "^1.4.8",
     "bun-types": "^1.1.8",
+    "prompt-password": "^1.2.0",
     "readline-sync": "^1.4.10",
     "typescript": "^5.4.5"
   }

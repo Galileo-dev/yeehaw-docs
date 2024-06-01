@@ -2,8 +2,8 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
-import * as readlineSync from "readline-sync";
 import { PasswordModel } from "@backend/models";
+import PromptPassword from "prompt-password";
 
 import {
   checkHandler,
@@ -23,8 +23,13 @@ async function validatePassword(password: string): Promise<void> {
     throw new Error(PasswordModel.description);
   }
 }
-const log = console.log;
 
+const log = console.log;
+const prompt = new PromptPassword({
+  type: "password",
+  message: "Enter your password",
+  name: "password",
+});
 
 const parser = yargs(hideBin(process.argv))
   .updateStrings({
@@ -40,14 +45,13 @@ const parser = yargs(hideBin(process.argv))
           type: "string",
           demandOption: true,
         }),
+
     async (argv) => {
-      const password = readlineSync.question("Enter your password: ", {
-        hideEchoBack: true,
-      });
+      const password = await prompt.run();
       await validatePassword(password);
-      signupHandler(argv.username, password)
-    }
-  )
+      signupHandler(argv.username, password);
+    })
+
   .command(
     "login <username>",
     "login to an existing account",
@@ -58,13 +62,11 @@ const parser = yargs(hideBin(process.argv))
           type: "string",
           demandOption: true,
         }),
-    (argv) => {
-      const password = readlineSync.question("Enter your password: ", {
-        hideEchoBack: true,
-      });
+    async (argv) => {
+      const password = await prompt.run();
+      await validatePassword(password);
       loginHandler(argv.username, password);
-    }
-  )
+    })
   .command(
     "upload <file> <recipient> <sender>",
     "Upload a file to a recipient",
