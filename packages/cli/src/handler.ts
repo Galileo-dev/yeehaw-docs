@@ -54,7 +54,7 @@ export async function signupHandler(username: string, password: string) {
     }
   }
 
-  if (await addUser(username, publicKey, privateKey)) {
+  if (await addUser(username, publicKey, privateKey, password)) {
     console.log("User created successfully");
   }
 }
@@ -97,7 +97,7 @@ export async function loginHandler(username: string, password: string) {
     throw new Error("Incorrect password");
   }
 
-  if (await addUser(username, user.publicKey, privateKey)) {
+  if (await addUser(username, user.publicKey, privateKey, password)) {
     console.log("User logged in successfully");
   }
 }
