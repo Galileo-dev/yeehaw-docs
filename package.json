@@ -5,5 +5,8 @@
   "type": "module",
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "elysia-rate-limit": "^4.1.0"
+  }
 }
