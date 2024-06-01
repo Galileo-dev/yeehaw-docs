@@ -1,6 +1,7 @@
 import jwt from "@elysiajs/jwt";
 import { swagger } from "@elysiajs/swagger";
 import { Elysia, t } from "elysia";
+import { rateLimit } from "elysia-rate-limit";
 import { PasswordModel, UsernameModel } from "../models";
 import { FileDB } from "./db/fileDB";
 import { UserDB } from "./db/userDB";
@@ -14,6 +15,12 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
       jwt({
         name: "jwt",
         secret: "Fischl von Luftschloss Narfidort",
+      })
+    )
+    .use(
+      rateLimit({
+        duration: 60000,
+        max: 15,
       })
     )
     .decorate({ authService: new AuthService(userDB) })
