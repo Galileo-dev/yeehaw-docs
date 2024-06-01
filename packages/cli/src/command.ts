@@ -1,9 +1,9 @@
 import chalk from "chalk";
+import inquirer from "inquirer";
 import * as readlineSync from "readline-sync";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
-const read = require("read");
 
 import {
   checkHandler,
@@ -31,10 +31,14 @@ const parser = yargs(hideBin(process.argv))
       }),
 
     async (argv) => {
-      const password = readlineSync.question("Enter Your Password: ", {
-        hideEchoBack: true,
-        mask: "",
-      });
+      const { password } = await inquirer.prompt([
+        {
+          type: "password",
+          name: "password",
+          message: "Enter Your Password:",
+          mask: "*",
+        },
+      ]);
       await signupHandler(argv.username, password);
     }
   )
