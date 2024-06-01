@@ -6,7 +6,7 @@ import * as crypto from "crypto";
 export async function deriveKey(
   password: string,
   salt: string,
-  iterations: number = 100000,
+  iterations: number = 600000,
   keyLength: number = 32,
   digest: string = "sha256"
 ): Promise<Buffer> {
