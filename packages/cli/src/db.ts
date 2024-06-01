@@ -15,7 +15,8 @@ export const user_table_query = db
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
   public_key TEXT NOT NULL,
-  private_key TEXT NOT NULL
+  private_key TEXT NOT NULL,
+  password_hash TEXT NOT NULL
 )`
   )
   .run();
@@ -32,13 +33,14 @@ function convertToCamelCase(user: any): User {
 export async function addUser(
   username: string,
   publicKey: string,
-  privateKey: string
+  privateKey: string,
+  passwordHash: string
 ): Promise<User> {
   const user = db
     .query(
-      `INSERT INTO user (username, public_key, private_key) VALUES (?, ?, ?) RETURNING *`
+      `INSERT INTO user (username, public_key, private_key, password_hash) VALUES (?, ?, ?, ?) RETURNING *`
     )
-    .get(username, publicKey, privateKey);
+    .get(username, publicKey, privateKey, passwordHash);
 
   return convertToCamelCase(user);
 }
