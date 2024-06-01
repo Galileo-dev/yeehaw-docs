@@ -109,7 +109,6 @@ export async function decryptPrivateKey(
   );
   decrypted += decipher.final("utf8");
 
-  console.log("Decrypted data:", decrypted);
   return decrypted;
 }
 

@@ -1,4 +1,5 @@
 import { treaty } from "@elysiajs/eden";
+import password from "@inquirer/password";
 import chalk from "chalk";
 import * as crypto from "crypto";
 import * as path from "path";
@@ -11,20 +12,36 @@ import {
   encryptPrivateKey,
   encryptSymmetricKey,
   generateKeyPair,
-  signData,
-  verifySignature,
 } from "./crypto";
-import { addUser, deleteUser, getUser, getUsers } from "./db";
+import {
+  addUser,
+  deleteUser,
+  getActiveUser,
+  getJwtToken,
+  getUser,
+  getUsers,
+  setActiveUser,
+} from "./db";
 import { formatValidationErrors } from "./error";
 import { getFile, getUserPublicKey } from "./server";
+import { getHeaderValue } from "./utils";
 
-const app = treaty<App>("localhost:3001");
+const jwtToken = await getJwtToken();
 
-export async function signupHandler(username: string, password: string) {
+const headers: Record<string, string> = jwtToken ? { cookie: jwtToken } : {};
+
+const app = treaty<App>("localhost:3001", {
+  headers,
+});
+export async function signupHandler(
+  username: string,
+  authPassword: string,
+  masterPassword: string
+) {
   if (!(await checkUsernameAvailability(username))) {
     if (
       !(await confirm(
-        "Username already exists locally, do you want to overwrite with new user? (you will lose access to the old user's files!)"
+        "Username already exists locally, do you want to overwrite with new user? (you may lose access to the old user's files!)"
       ))
     ) {
       return;
@@ -35,12 +52,15 @@ export async function signupHandler(username: string, password: string) {
   const { publicKey, privateKey } = await generateKeyPair();
 
   // encrypt private key with password
-  const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
+  const encryptedPrivateKey = await encryptPrivateKey(
+    privateKey,
+    masterPassword
+  );
 
   // create the user on the server
-  const { data, error } = await app.register.post({
+  const { data, error, headers } = await app.register.post({
     username,
-    password,
+    password: authPassword,
     publicKey,
     encryptedPrivateKey,
   });
@@ -49,21 +69,38 @@ export async function signupHandler(username: string, password: string) {
     switch (error.status) {
       case 422:
         throw formatValidationErrors(error.value);
+      case 500:
+        throw error.value;
       default:
         throw error.value;
     }
   }
 
-  if (await addUser(username, publicKey, privateKey, password)) {
+  if (!headers) {
+    throw new Error("No headers received from server");
+  }
+
+  const jwtToken = getHeaderValue(headers, "set-cookie");
+
+  if (!jwtToken) {
+    throw new Error("No JWT token received from server");
+  }
+
+  if (await addUser(username, publicKey, encryptedPrivateKey, jwtToken)) {
+    setActiveUser(username);
     console.log("User created successfully");
   }
 }
 
-export async function loginHandler(username: string, password: string) {
+export async function loginHandler(
+  username: string,
+  authPassword: string,
+  masterPassword: string
+) {
   if (!(await checkUsernameAvailability(username))) {
     if (
       !(await confirm(
-        "Username already exists locally, do you want to overwrite with new user? (you will lose access to the old user's files!)"
+        "Username already exists locally, do you want to overwrite with new user? (you may lose access to the old user's files!)"
       ))
     ) {
       return;
@@ -72,7 +109,14 @@ export async function loginHandler(username: string, password: string) {
   }
 
   // get user from server
-  const { data: user, error } = await app.user({ username }).get();
+  const {
+    data: user,
+    error,
+    headers,
+  } = await app.login.post({
+    username,
+    authPassword,
+  });
 
   if (error) {
     switch (error.status) {
@@ -87,32 +131,63 @@ export async function loginHandler(username: string, password: string) {
     throw new Error("User not found");
   }
 
+  if (!headers) {
+    throw new Error("No headers received from server");
+  }
+
+  const jwtToken = getHeaderValue(headers, "set-cookie");
+
+  if (!jwtToken) {
+    throw new Error("No JWT token received from server");
+  }
+
   const privateKey = await decryptPrivateKey(
-    password,
+    masterPassword,
     user.encryptedPrivateKey
   );
 
   if (!privateKey) {
-    throw new Error("Incorrect password");
+    throw new Error("Incorrect master password");
   }
 
-  if (await addUser(username, user.publicKey, privateKey, password)) {
+  if (
+    await addUser(username, user.publicKey, user.encryptedPrivateKey, jwtToken)
+  ) {
+    setActiveUser(username);
     console.log("User logged in successfully");
   }
+}
+
+export async function logoutHandler(username: string) {
+  await deleteUser(username);
+  console.log("User logged out successfully");
+}
+
+export async function switchUserHandler(username: string) {
+  const user = await getUser(username);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  setActiveUser(username);
+  console.log("User switched successfully");
 }
 
 export async function uploadHandler(
   filePath: string,
   recipient: string,
-  sender: string
+  masterPassword: string
 ) {
   // get the sender's private key from the local db
-  const user = await getUser(sender);
-  if (!user) {
+  const sender = await getActiveUser();
+  if (!sender) {
     throw new Error("Sender not found, please login first");
   }
 
-  const senderPrivateKey = user.privateKey;
+  const senderPrivateKey = await decryptPrivateKey(
+    masterPassword,
+    sender.encryptedPrivateKey
+  );
 
   // retrieve the recipient's public key
   const recipientPublicKey = await getUserPublicKey(recipient);
@@ -141,13 +216,10 @@ export async function uploadHandler(
     recipientPublicKey
   );
 
-  // Create a digital signature of the file using the sender's private key
-  const signature = signData(fileBufferNode, senderPrivateKey);
-
   // we need to bundle into a file object for elysia to accept it
 
   const { data, error } = await app.upload.post({
-    fromUsername: sender,
+    fromUsername: sender.username,
     toUsername: recipient,
     file: {
       name: fileName,
@@ -156,7 +228,6 @@ export async function uploadHandler(
       iv: iv.toString("base64"),
       authTag: authTag.toString("base64"),
       encryptedSymmetricKey: encryptedSymmetricKey.toString("base64"),
-      signature: signature.toString("base64"),
     },
   });
 
@@ -174,36 +245,28 @@ export async function uploadHandler(
 }
 
 export async function usersHandler() {
-  const { data, error } = await app.users.get();
-  if (error) {
-    switch (error.status) {
-      case 422:
-        throw formatValidationErrors(error.value);
-
-      default:
-        throw error.value;
-    }
-  }
-
   // pretty print the users
-  console.log(chalk.green.bold("Current Users:"));
-  data.forEach((user: string) => {
-    console.log(chalk.whiteBright("• " + user));
-  });
-
-  console.log(chalk.green.bold("Local Users:"));
+  console.log(chalk.green.bold("Users:"));
   const users = await getUsers();
+
+  const activeUser = await getActiveUser();
+
   if (users.length === 0) {
-    console.log(chalk.redBright("• No local users"));
+    console.log(chalk.redBright("• No users, please register or login"));
     return;
   }
   users.forEach((user) => {
+    if (user.username === activeUser?.username) {
+      console.log(chalk.whiteBright(chalk.green("✔ ") + user.username));
+      return;
+    }
+
     console.log(chalk.whiteBright("• " + user.username));
   });
 }
 
-export async function checkHandler(username: string) {
-  const { data, error } = await app.files.shared({ username }).get();
+export async function checkHandler() {
+  const { data, error } = await app.files.shared.get();
 
   if (error) {
     switch (error.status) {
@@ -216,10 +279,10 @@ export async function checkHandler(username: string) {
   }
 
   if (!data) {
-    throw new Error("User not found");
+    throw new Error("Failed to get files");
   }
 
-  console.log(chalk.green.bold(`Files available for ${username}:`));
+  console.log(chalk.green.bold(`Files available:`));
   data.forEach((file) => {
     console.log(
       chalk.whiteBright(
@@ -241,18 +304,18 @@ export async function downloadHandler(fileId: number, recipient: string) {
     throw new Error("Recipient not found");
   }
 
-  const recipientPrivateKey = user.privateKey;
+  const masterPassword = await password({
+    message: "Enter your master password",
+  });
+
+  const recipientPrivateKey = await decryptPrivateKey(
+    masterPassword,
+    user.encryptedPrivateKey
+  );
 
   // get the file from the server
   const {
-    file: {
-      name,
-      iv,
-      authTag,
-      encryptedSymmetricKey,
-      signature,
-      data: encryptedData,
-    },
+    file: { name, iv, authTag, encryptedSymmetricKey, data: encryptedData },
     fromUsername,
   } = await getFile(fileId);
 
@@ -265,18 +328,6 @@ export async function downloadHandler(fileId: number, recipient: string) {
   const senderPublicKey = await getUserPublicKey(fromUsername);
 
   console.log(senderPublicKey);
-
-  // Verify the signature of the file using the sender's public key
-  const signatureBuffer = Buffer.from(signature, "base64");
-  const verified = verifySignature(
-    Buffer.from(encryptedData, "base64"),
-    signatureBuffer,
-    senderPublicKey
-  );
-
-  if (!verified) {
-    throw new Error("File signature is invalid");
-  }
 
   // Decrypt the file using the symmetric key
   const decryptedData = decryptData(
