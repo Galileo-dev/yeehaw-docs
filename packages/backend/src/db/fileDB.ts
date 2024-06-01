@@ -1,4 +1,4 @@
-import { DB } from "../abstract/DB";
+import { DB } from "./DB";
 
 export interface YeehawFile {
   id?: number;

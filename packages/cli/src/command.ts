@@ -14,6 +14,7 @@ import {
 const log = console.log;
 
 const argv = yargs(hideBin(process.argv))
+  .scriptName("yeehaw")
   .updateStrings({
     "Options:": chalk.blue("Options:"),
   })
