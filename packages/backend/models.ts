@@ -12,7 +12,7 @@ export const UsernameModel = t.String({
 export const PasswordModel = t.String({
   minLength: 8,
   default: "Password123!",
-  pattern: "^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$",
+  pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[$@$!%*?&])[A-Za-z\\d$@$!%*?&]{8,}",
   description:
     "A password must have minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character. Please try again.",
 });
