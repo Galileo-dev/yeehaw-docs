@@ -1,6 +1,5 @@
+import password from '@inquirer/password';
 import chalk from "chalk";
-import inquirer from "inquirer";
-import * as readlineSync from "readline-sync";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { cowboyBoot } from "./cowboyBoot";
@@ -31,15 +30,8 @@ const parser = yargs(hideBin(process.argv))
       }),
 
     async (argv) => {
-      const { password } = await inquirer.prompt([
-        {
-          type: "password",
-          name: "password",
-          message: "Enter Your Password:",
-          mask: "*",
-        },
-      ]);
-      await signupHandler(argv.username, password);
+      const passwordPrompt = await password({ message: 'Enter a password: (min 8 chars, with uppercase, lowercase, number, and special character.)' });
+      await signupHandler(argv.username, passwordPrompt);
     }
   )
 
@@ -53,11 +45,8 @@ const parser = yargs(hideBin(process.argv))
         demandOption: true,
       }),
     async (argv) => {
-      const password = readlineSync.question("Enter Your Password: ", {
-        hideEchoBack: true,
-        mask: "",
-      });
-      await loginHandler(argv.username, password);
+      const passwordPrompt = await password({ message: 'Enter your password' });
+      await loginHandler(argv.username, passwordPrompt);
     }
   )
   .command(
@@ -145,4 +134,5 @@ const parser = yargs(hideBin(process.argv))
       );
     }
   )
+  .showHelpOnFail(false, "Use --help for available options")
   .parse();
