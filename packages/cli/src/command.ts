@@ -178,9 +178,21 @@ const parser = yargs(hideBin(process.argv))
         description: "The id of the file",
         type: "number",
         demandOption: true,
-      }),
+      })
+      .option("location", {
+        alias: "l",
+        description: "The location you want to save the file to",
+        type: "string",
+    }),
     async (argv) => {
-      await downloadHandler(argv.fileId);
+      let location = argv.location;
+      if (!location) {
+        location = await input({
+          message: "Enter the location you want to save the file to",
+        });
+
+      await downloadHandler(argv.fileId, location);
+      }
     }
   )
   .command(
