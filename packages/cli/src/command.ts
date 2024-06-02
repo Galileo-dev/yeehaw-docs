@@ -171,7 +171,7 @@ const parser = yargs(hideBin(process.argv))
     }
   )
   .command(
-    "download <fileId> <location>",
+    "download <fileId> [location]",
     "Download a file",
     (yargs) =>
       yargs.positional("fileId", {
@@ -181,10 +181,11 @@ const parser = yargs(hideBin(process.argv))
       }).positional("location", {
         description: "The location you want to save the file to",
         type: "string",
-        demandOption: true,
+        demandOption: false,
     }),
     async (argv) => {
-      await downloadHandler(argv.fileId, argv.location);
+      const location = argv.location || process.cwd();
+      await downloadHandler(argv.fileId, location);
     }
   )
   .command(
