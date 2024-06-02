@@ -20,6 +20,7 @@ import {
   getJwtToken,
   getUser,
   getUsers,
+  purgeData,
   setActiveUser,
 } from "./db";
 import { formatValidationErrors } from "./error";
@@ -339,4 +340,15 @@ export async function downloadHandler(fileId: number) {
 
   Bun.write(name, file);
   console.log("File downloaded successfully");
+}
+
+export async function purgeHandler() {
+  if (
+    await confirm(
+      "This will delete all data, (you will have to re-register and re-login) are you sure?"
+    )
+  ) {
+    await purgeData();
+    console.log("Data purged successfully");
+  }
 }

@@ -10,6 +10,7 @@ import {
   downloadHandler,
   loginHandler,
   logoutHandler,
+  purgeHandler,
   signupHandler,
   switchUserHandler,
   uploadHandler,
@@ -183,6 +184,14 @@ const parser = yargs(hideBin(process.argv))
     }
   )
   .command(
+    "purge",
+    "Purge all data",
+    (yargs) => yargs,
+    async (argv) => {
+      await purgeHandler();
+    }
+  )
+  .command(
     "$0",
     "The default command",
     (yargs) => yargs,
@@ -204,6 +213,7 @@ const parser = yargs(hideBin(process.argv))
       );
     }
   )
+
   .showHelpOnFail(false, "Use --help for available options");
 
 try {
