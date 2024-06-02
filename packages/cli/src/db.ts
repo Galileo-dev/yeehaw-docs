@@ -44,14 +44,17 @@ const dbFilePath = path.join(dbDirectory, 'cli.db');
 const db = new Database(dbFilePath);
 
 
-// ============================================================
-// set file permissions for the database on Windows
-// ============================================================
+// ==================================================================
+// set file permissions (read/write only by owner) for the databaase
+// ==================================================================
 
 if (process.platform === 'win32') {
   const command = `powershell.exe -Command "& {Set-Acl -Path '${dbFilePath}' -AclObject (Get-Acl -Path '${dbFilePath}').Access | ForEach-Object { $_.FileSystemRights = 'FullControl'; $_.AccessControlType = 'Allow'; $_.IdentityReference = '$(whoami)'; $_ }} "`;
   execSync(command);
 }
+
+fs.chmodSync(dbFilePath, 0o600);
+
 
 export const user_table_query = db
   .prepare(
