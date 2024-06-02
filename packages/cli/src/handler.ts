@@ -318,7 +318,6 @@ export async function downloadHandler(fileId: number, location: string) {
   // get the file from the server
   const {
     file: { name, iv, authTag, encryptedSymmetricKey, data: encryptedData },
-    fromUsername,
   } = await getFile(fileId);
 
   // decrypt the symmetric key used to encrypt the file
@@ -337,6 +336,15 @@ export async function downloadHandler(fileId: number, location: string) {
   );
 
   const filePath = path.join(location, name);
+
+  // check if filename exists in the specified directory
+  if (fs.existsSync(filePath)) {
+    const overwrite = await confirm("File ${name} already exists in ${location}. Overwrite?");
+    if (!overwrite) {
+      console.log('Download cancelled');
+      return;
+    }
+  }
 
   fs.writeFileSync(filePath, decryptedData);
   console.log("File downloaded successfully");
