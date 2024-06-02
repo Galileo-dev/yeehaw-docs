@@ -221,13 +221,7 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
                 set,
                 auth.value
               );
-              console.log(user);
-
-              if (!user) {
-                return (set.status = "Unauthorized");
-              }
-
-              return fileService.getSharedFiles(user?.username);
+              return fileService.getSharedFiles(user.username);
             },
             {
               detail: {
