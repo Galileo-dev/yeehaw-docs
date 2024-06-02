@@ -37,7 +37,7 @@ export const getJWT = async (authService: AuthService, username: string) => {
 
   const jwtToken = await jwt({
     name: "jwt",
-    secret: "Fischl von Luftschloss Narfidort",
+    secret: process.env.JWT_SECRET!,
   }).decorator.jwt.sign({ id: user.id! });
 
   const headers: Record<string, string> = jwtToken

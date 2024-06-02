@@ -14,7 +14,7 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
     .use(
       jwt({
         name: "jwt",
-        secret: "Fischl von Luftschloss Narfidort",
+        secret: process.env.JWT_SECRET!,
       })
     )
     .use(

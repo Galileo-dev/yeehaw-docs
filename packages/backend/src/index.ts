@@ -11,7 +11,18 @@ const spinner = ora({
 const userDB = new UserDB();
 const fileDB = new FileDB();
 
-const App = app(userDB, fileDB).listen(env.PORT || 3001);
+const tlsOptions =
+  process.env.NODE_ENV === "production"
+    ? {
+        key: Bun.file(process.env.SSL_KEY_PATH!),
+        cert: Bun.file(process.env.SSL_CERT_PATH!),
+      }
+    : undefined;
+
+const App = app(userDB, fileDB).listen({
+  port: env.PORT || 3001,
+  tls: tlsOptions,
+});
 
 export type App = typeof App;
 
