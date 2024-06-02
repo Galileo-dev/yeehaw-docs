@@ -1,4 +1,7 @@
 import { Database } from "bun:sqlite";
+import { homedir } from 'os';
+import path from 'path';
+import fs from 'fs';
 
 interface User {
   id?: number;
@@ -7,7 +10,30 @@ interface User {
   privateKey: string;
 }
 
-const db = new Database("../cli.db");
+// ============================================================
+// create database in Local Application Data directory (Windows)
+// ============================================================
+
+const getLocalAppDataDirectory = () => {
+  const localAppData = process.env.LOCALAPPDATA;
+  if (localAppData) {
+    return localAppData;
+  } else {
+    return path.join(homedir(), 'AppData', 'Local');
+  }
+};
+
+
+const dbDirPath = path.join(getLocalAppDataDirectory(), 'YeehawDocs');
+if (!fs.existsSync(dbDirPath)) {
+  fs.mkdirSync(dbDirPath, { recursive: true });
+}
+
+
+const dbFilePath = path.join(dbDirPath, 'cli.db');
+
+const db = new Database(dbFilePath);
+
 
 export const user_table_query = db
   .prepare(
