@@ -7,7 +7,7 @@ import { FileDB, YeehawFile } from "../src/db/fileDB";
 import { UserDB } from "../src/db/userDB";
 import { AuthService } from "../src/services/authService";
 import { FileService } from "../src/services/fileService";
-import { registerTestUser } from "./utils";
+import { getJWT, registerTestUser } from "./utils";
 
 const mockEncryptedPrivateKey = {
   iv: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
@@ -79,16 +79,19 @@ describe("Yeehaw Docs E2E", () => {
   });
 
   it("encrypted private key should be stored in the database", async () => {
-    const { data } = await api.register.post({
+    const authService = new AuthService(userDB);
+    const { data, headers } = await api.register.post({
       username: "testuser",
       password: "Password123!",
       publicKey: "publickey123",
       encryptedPrivateKey: mockEncryptedPrivateKey,
     });
 
-    const { data: fetchedUser } = await api
-      .user({ username: "testuser" })
-      .get();
+    const { data: fetchedUser, error } = await api
+      .user({
+        username: "testuser",
+      })
+      .get({ headers: await getJWT(authService, "testuser") });
     expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
   });
 
@@ -96,7 +99,9 @@ describe("Yeehaw Docs E2E", () => {
     const authService = new AuthService(userDB);
     await registerTestUser(authService);
 
-    const { data } = await api.user({ username: "testuser" }).get();
+    const { data } = await api
+      .user({ username: "testuser" })
+      .get({ headers: await getJWT(authService, "testuser") });
     expect(data?.username).toBe("testuser");
     expect(data?.publicKey).toBe("publickey123");
   });
@@ -106,11 +111,14 @@ describe("Yeehaw Docs E2E", () => {
     await registerTestUser(authService, "fromuser");
     await registerTestUser(authService, "touser");
 
-    const { error } = await api.upload.post({
-      fromUsername: "fromuser",
-      toUsername: "touser",
-      file: mockEncryptedFile,
-    });
+    const { error } = await api.upload.post(
+      {
+        fromUsername: "fromuser",
+        toUsername: "touser",
+        file: mockEncryptedFile,
+      },
+      { headers: await getJWT(authService, "fromuser") }
+    );
     expect(error).toBeNull();
   });
 
@@ -128,7 +136,9 @@ describe("Yeehaw Docs E2E", () => {
 
     await fileService.upload(file);
 
-    const { data } = await api.files.shared({ username: "touser" }).get();
+    const { data } = await api.files.shared.get({
+      headers: await getJWT(authService, "touser"),
+    });
 
     expect(data).toEqual([
       {

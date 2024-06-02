@@ -30,6 +30,20 @@ export class AuthService {
     });
   }
 
+  async login(username: string, password: string) {
+    const user = await this.userDB.getUser(username);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (await Bun.password.verify(password, user.passwordHash)) {
+      return user;
+    }
+
+    throw new Error("Incorrect password");
+  }
+
   async getUser(username: string) {
     const user = await this.userDB.getUser(username);
     return user;
@@ -50,5 +64,22 @@ export class AuthService {
   async checkPassword(password: string, hash: string) {
     const isMatch = await Bun.password.verify(password, hash);
     return isMatch;
+  }
+
+  async getUserFromJwt(jwt: any, set: any, value: string) {
+    const userId = ((await jwt.verify(value)) as any).id as number;
+    if (!userId) {
+      set.status = 401;
+
+      throw new Error("Unauthorized");
+    }
+
+    const user = await this.userDB.getUserById(userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
   }
 }

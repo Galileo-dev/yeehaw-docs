@@ -1,3 +1,4 @@
+import jwt from "@elysiajs/jwt";
 import { AuthService } from "../src/services/authService";
 
 export const registerTestUser = async (
@@ -25,4 +26,23 @@ export const registerTestUser = async (
     testUser.public_key,
     testUser.encryptedPrivateKey
   );
+};
+
+export const getJWT = async (authService: AuthService, username: string) => {
+  const user = await authService.getUser(username);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const jwtToken = await jwt({
+    name: "jwt",
+    secret: "Fischl von Luftschloss Narfidort",
+  }).decorator.jwt.sign({ id: user.id! });
+
+  const headers: Record<string, string> = jwtToken
+    ? { cookie: `auth=${jwtToken}` }
+    : {};
+
+  return headers;
 };

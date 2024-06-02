@@ -39,11 +39,15 @@ export class FileService {
     return files;
   }
 
-  async download(id: number) {
+  async download(id: number, username: string) {
     const file: YeehawFile | null = await this.fileDB.getFile(id);
 
     if (!file) {
       throw new Error(`File not found: ${id}`);
+    }
+
+    if (file.toUsername !== username) {
+      throw new Error(`Unauthorized to download file: ${id} as ${username}`);
     }
 
     return file;
