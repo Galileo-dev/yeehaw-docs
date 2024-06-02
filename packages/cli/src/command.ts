@@ -188,7 +188,7 @@ const parser = yargs(hideBin(process.argv))
       let location = argv.location;
       if (!location) {
         location = await input({
-          message: "Enter the location you want to save the file to",
+          message: "Alright, partner, where you reckon you wanna stash this here file? Enter the location you want to save it to.",
         });
 
       await downloadHandler(argv.fileId, location);
