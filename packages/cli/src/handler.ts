@@ -2,6 +2,7 @@ import { treaty } from "@elysiajs/eden";
 import password from "@inquirer/password";
 import chalk from "chalk";
 import * as crypto from "crypto";
+import * as fs from 'fs';
 import * as path from "path";
 import type { App } from "../../backend/src";
 import {
@@ -298,7 +299,7 @@ export async function checkUsernameAvailability(username: string) {
   return !user;
 }
 
-export async function downloadHandler(fileId: number) {
+export async function downloadHandler(fileId: number, location: string) {
   // get the recipient's private key from the local db
   const user = await getActiveUser();
   if (!user) {
@@ -336,9 +337,10 @@ export async function downloadHandler(fileId: number) {
     Buffer.from(authTag, "base64")
   );
 
+  const filePath = path.join(location, name);
   const file = new File([decryptedData], name);
 
-  Bun.write(name, file);
+  fs.writeFileSync(filePath, decryptedData);
   console.log("File downloaded successfully");
 }
 
