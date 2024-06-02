@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { homedir } from 'os';
+import { homedir, platform } from 'os';
 import path from 'path';
 import fs from 'fs';
 
@@ -11,26 +11,34 @@ interface User {
 }
 
 // ============================================================
-// create database in Local Application Data directory (Windows)
+// create database in Local Application Data directory
 // ============================================================
 
-const getLocalAppDataDirectory = () => {
-  const localAppData = process.env.LOCALAPPDATA;
-  if (localAppData) {
-    return localAppData;
-  } else {
-    return path.join(homedir(), 'AppData', 'Local');
+const getAppDataDirectory = () => {
+  const homeDir = homedir();
+  const plat = platform();
+
+  switch (plat) {
+    case 'win32':
+      return process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local');
+    case 'darwin':
+      return path.join(homeDir, 'Library', 'Application Support');
+    case 'linux':
+    default:
+      return process.env.XDG_DATA_HOME || path.join(homeDir, '.local', 'share');
   }
 };
 
+const appDataDirectory = getAppDataDirectory();
+const dbDirectory = path.join(appDataDirectory, 'YeehawDocs');
 
-const dbDirPath = path.join(getLocalAppDataDirectory(), 'YeehawDocs');
-if (!fs.existsSync(dbDirPath)) {
-  fs.mkdirSync(dbDirPath, { recursive: true });
+
+if (!fs.existsSync(dbDirectory)) {
+  fs.mkdirSync(dbDirectory, { recursive: true });
 }
 
 
-const dbFilePath = path.join(dbDirPath, 'cli.db');
+const dbFilePath = path.join(dbDirectory, 'cli.db');
 
 const db = new Database(dbFilePath);
 
