@@ -43,7 +43,7 @@ export async function signupHandler(
   if (!(await checkUsernameAvailability(username))) {
     if (
       !(await confirm(
-        "Username already exists locally, do you want to overwrite with new user? (you may lose access to the old user's files!)"
+        `This town's only big enough for one ${username}. ${username} already exists locally. You reckon you're fixin' to overwrite the old wrangler and risk losin' access to their files?`
       ))
     ) {
       return;
@@ -79,18 +79,18 @@ export async function signupHandler(
   }
 
   if (!headers) {
-    throw new Error("No headers received from server");
+    throw new Error("Well, I'll be darned! Ain't no headers makin' its way over from the server");
   }
 
   const jwtToken = getHeaderValue(headers, "set-cookie");
 
   if (!jwtToken) {
-    throw new Error("No JWT token received from server");
+    throw new Error("Well, I'll be darned! Ain't no JWT token makin' its way over from the server");
   }
 
   if (await addUser(username, publicKey, encryptedPrivateKey, jwtToken)) {
     setActiveUser(username);
-    console.log("User created successfully");
+    console.log("Yahoooo!! We've got ourselves a new cowpoke in town! Saddle up and ride on, cowboy!");
   }
 }
 
@@ -102,7 +102,7 @@ export async function loginHandler(
   if (!(await checkUsernameAvailability(username))) {
     if (
       !(await confirm(
-        "Username already exists locally, do you want to overwrite with new user? (you may lose access to the old user's files!)"
+        `This town's only big enough for one ${username}. ${username} already exists locally. You reckon you're fixin' to overwrite the old wrangler and risk losin' access to their files?`
       ))
     ) {
       return;
@@ -130,17 +130,17 @@ export async function loginHandler(
   }
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?");
   }
 
   if (!headers) {
-    throw new Error("No headers received from server");
+    throw new Error("Well, I'll be darned! Ain't no headers makin' its way over from the server");
   }
 
   const jwtToken = getHeaderValue(headers, "set-cookie");
 
   if (!jwtToken) {
-    throw new Error("No JWT token received from server");
+    throw new Error("Well, I'll be darned! Ain't no JWT token makin' its way over from the server");
   }
 
   const privateKey = await decryptPrivateKey(
@@ -149,30 +149,30 @@ export async function loginHandler(
   );
 
   if (!privateKey) {
-    throw new Error("Incorrect master password");
+    throw new Error("Hold your horses, cowboy! That there master password ain't quite right. Try again, partner");
   }
 
   if (
     await addUser(username, user.publicKey, user.encryptedPrivateKey, jwtToken)
   ) {
     setActiveUser(username);
-    console.log("User logged in successfully");
+    console.log("Welcome cowboy!");
   }
 }
 
 export async function logoutHandler(username: string) {
   await deleteUser(username);
-  console.log("User logged out successfully");
+  console.log("Well, you've kicked off them boots and hung up your hat like a true cowboy. Until next time, partner");
 }
 
 export async function switchUserHandler(username: string) {
   const user = await getUser(username);
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?");
   }
 
   setActiveUser(username);
-  console.log("User switched successfully");
+  console.log("Well, look at you, swappin' saddles like a seasoned rider. All set in your new spot, partner?");
 }
 
 export async function uploadHandler(
@@ -183,7 +183,7 @@ export async function uploadHandler(
   // get the sender's private key from the local db
   const sender = await getActiveUser();
   if (!sender) {
-    throw new Error("Sender not found, please login first");
+    throw new Error("Apologies partner, I'm afraid that sender can't be rusted up. Would ya mind loggin in first?");
   }
 
   const senderPrivateKey = await decryptPrivateKey(
@@ -197,7 +197,7 @@ export async function uploadHandler(
   const bunFile = await Bun.file(filePath); // needs to be converted to a file object for elysia to accept it
   const fileBuffer = await bunFile.arrayBuffer();
   if (!bunFile.name) {
-    throw new Error("File name is not valid");
+    throw new Error("Hold your horses, cowboy. Seems like that file name ain't quite cuttin' the mustard. Better rustle up a proper one, partner");
   }
 
   const fileName = path.basename(bunFile.name);
@@ -243,7 +243,7 @@ export async function uploadHandler(
     }
   }
 
-  console.log("File uploaded successfully");
+  console.log("That there file's been sent well on its way. Nicely done, partner");
 }
 
 export async function usersHandler() {
@@ -254,7 +254,7 @@ export async function usersHandler() {
   const activeUser = await getActiveUser();
 
   if (users.length === 0) {
-    console.log(chalk.redBright("• No users, please register or login"));
+    console.log(chalk.redBright("Looks like the town's deserted, partner. Time to strap on your spurs and register or login."));
     return;
   }
   users.forEach((user) => {
@@ -281,7 +281,7 @@ export async function checkHandler() {
   }
 
   if (!data) {
-    throw new Error("Failed to get files");
+    throw new Error("Well, ain't that a kick in the stirrups? Seems we done failed to wrangle them files");
   }
 
   console.log(chalk.green.bold(`Files available:`));
@@ -303,11 +303,11 @@ export async function downloadHandler(fileId: number, location: string) {
   // get the recipient's private key from the local db
   const user = await getActiveUser();
   if (!user) {
-    throw new Error("Recipient not found");
+    throw new Error("Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?");
   }
 
   const masterPassword = await password({
-    message: "Enter your master password",
+    message: "Mind sharin' your master password?",
   });
 
   const recipientPrivateKey = await decryptPrivateKey(
@@ -339,24 +339,24 @@ export async function downloadHandler(fileId: number, location: string) {
 
   // check if filename exists in the specified directory
   if (fs.existsSync(filePath)) {
-    const overwrite = await confirm("File ${name} already exists in ${location}. Overwrite?");
+    const overwrite = await confirm(`Seems to me this here file, ${name}, done already pitched its tent in ${location}. You fixin' to overwrite it?`);
     if (!overwrite) {
-      console.log('Download cancelled');
+      console.log("Well, reckon it's time to call off this here download. Yesiree, that file won't be moseyin' 'round these parts anytime soon");
       return;
     }
   }
 
   fs.writeFileSync(filePath, decryptedData);
-  console.log("File downloaded successfully");
+  console.log("YeeeeeHAW! that there file's been lasooed 'n' wrangled in without a hitch!");
 }
 
 export async function purgeHandler() {
   if (
     await confirm(
-      "This will delete all data, (you will have to re-register and re-login) are you sure?"
+      "'Scuse me partner - this here action's fixin' to wipe out all your data clean as a whistle. Meanin' you'll be roped into re-registerin' and wrangling with that login again. Are you mighty sure this is what you're after?"
     )
   ) {
     await purgeData();
-    console.log("Data purged successfully");
+    console.log("Well, reckon we done cleared them data trails like a tumbleweed in a prairie breeze. All spick and span now, partner!");
   }
 }
