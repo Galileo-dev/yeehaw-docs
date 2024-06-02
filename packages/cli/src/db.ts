@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { homedir, platform } from 'os';
 import path from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
 
 interface User {
   id?: number;
@@ -11,7 +12,7 @@ interface User {
 }
 
 // ============================================================
-// create database in Local Application Data directory
+// create database in the standard location for the OS
 // ============================================================
 
 const getAppDataDirectory = () => {
@@ -42,6 +43,15 @@ const dbFilePath = path.join(dbDirectory, 'cli.db');
 
 const db = new Database(dbFilePath);
 
+
+// ============================================================
+// set file permissions for the database on Windows
+// ============================================================
+
+if (process.platform === 'win32') {
+  const command = `powershell.exe -Command "& {Set-Acl -Path '${dbFilePath}' -AclObject (Get-Acl -Path '${dbFilePath}').Access | ForEach-Object { $_.FileSystemRights = 'FullControl'; $_.AccessControlType = 'Allow'; $_.IdentityReference = '$(whoami)'; $_ }} "`;
+  execSync(command);
+}
 
 export const user_table_query = db
   .prepare(
