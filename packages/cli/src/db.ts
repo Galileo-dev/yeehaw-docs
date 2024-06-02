@@ -1,4 +1,8 @@
 import { Database } from "bun:sqlite";
+import { homedir, platform } from 'os';
+import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
 
 interface User {
   id?: number;
@@ -7,7 +11,50 @@ interface User {
   privateKey: string;
 }
 
-const db = new Database("../cli.db");
+// ============================================================
+// create database in the standard location for the OS
+// ============================================================
+
+const getAppDataDirectory = () => {
+  const homeDir = homedir();
+  const plat = platform();
+
+  switch (plat) {
+    case 'win32':
+      return process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local');
+    case 'darwin':
+      return path.join(homeDir, 'Library', 'Application Support');
+    case 'linux':
+    default:
+      return process.env.XDG_DATA_HOME || path.join(homeDir, '.local', 'share');
+  }
+};
+
+const appDataDirectory = getAppDataDirectory();
+const dbDirectory = path.join(appDataDirectory, 'YeehawDocs');
+
+
+if (!fs.existsSync(dbDirectory)) {
+  fs.mkdirSync(dbDirectory, { recursive: true });
+}
+
+
+const dbFilePath = path.join(dbDirectory, 'cli.db');
+
+const db = new Database(dbFilePath);
+
+
+// ==================================================================
+// set file permissions (read/write only by owner) for the databaase
+// ==================================================================
+
+if (process.platform === 'win32') {
+  const command = `powershell.exe -Command "& {Set-Acl -Path '${dbFilePath}' -AclObject (Get-Acl -Path '${dbFilePath}').Access | ForEach-Object { $_.FileSystemRights = 'FullControl'; $_.AccessControlType = 'Allow'; $_.IdentityReference = '$(whoami)'; $_ }} "`;
+  execSync(command);
+}
+
+fs.chmodSync(dbFilePath, 0o600);
+
 
 export const user_table_query = db
   .prepare(
