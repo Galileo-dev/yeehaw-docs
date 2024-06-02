@@ -327,7 +327,6 @@ export async function downloadHandler(fileId: number, location: string) {
     recipientPrivateKey
   );
 
-  const senderPublicKey = await getUserPublicKey(fromUsername);
 
   // Decrypt the file using the symmetric key
   const decryptedData = decryptData(
@@ -338,7 +337,6 @@ export async function downloadHandler(fileId: number, location: string) {
   );
 
   const filePath = path.join(location, name);
-  const file = new File([decryptedData], name);
 
   fs.writeFileSync(filePath, decryptedData);
   console.log("File downloaded successfully");
