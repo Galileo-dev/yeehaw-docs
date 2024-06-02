@@ -170,23 +170,16 @@ const parser = yargs(hideBin(process.argv))
     }
   )
   .command(
-    "download <fileId> <recipient>",
-    "Download a file from a recipient",
+    "download <fileId>",
+    "Download a file",
     (yargs) =>
-      yargs
-        .positional("fileId", {
-          description: "The id of the file",
-          type: "number",
-          demandOption: true,
-        })
-        .positional("recipient", {
-          description: "The recipient's username",
-          type: "string",
-          demandOption: true,
-        }),
-
+      yargs.positional("fileId", {
+        description: "The id of the file",
+        type: "number",
+        demandOption: true,
+      }),
     async (argv) => {
-      await downloadHandler(argv.fileId, argv.recipient);
+      await downloadHandler(argv.fileId);
     }
   )
   .command(

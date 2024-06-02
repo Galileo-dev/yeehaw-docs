@@ -297,9 +297,9 @@ export async function checkUsernameAvailability(username: string) {
   return !user;
 }
 
-export async function downloadHandler(fileId: number, recipient: string) {
+export async function downloadHandler(fileId: number) {
   // get the recipient's private key from the local db
-  const user = await getUser(recipient);
+  const user = await getActiveUser();
   if (!user) {
     throw new Error("Recipient not found");
   }
@@ -326,8 +326,6 @@ export async function downloadHandler(fileId: number, recipient: string) {
   );
 
   const senderPublicKey = await getUserPublicKey(fromUsername);
-
-  console.log(senderPublicKey);
 
   // Decrypt the file using the symmetric key
   const decryptedData = decryptData(

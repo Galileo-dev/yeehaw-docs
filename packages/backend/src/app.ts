@@ -196,8 +196,23 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
           )
           .get(
             "/download/:id",
-            async ({ params: { id }, fileService }) => {
-              return fileService.download(id);
+            async ({
+              jwt,
+              set,
+              cookie: { auth },
+              params: { id },
+              fileService,
+              authService,
+            }) => {
+              const user = await authService.getUserFromJwt(
+                jwt,
+                set,
+                auth.value
+              );
+
+              // check users permission to download file
+
+              return fileService.download(id, user.username);
             },
             {
               params: t.Object({ id: t.Numeric() }),
