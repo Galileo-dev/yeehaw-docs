@@ -107,72 +107,81 @@ export async function loginHandler(
   authPassword: string,
   masterPassword: string
 ) {
-  if (!(await checkUsernameAvailability(username))) {
+  try {
+    if (!(await checkUsernameAvailability(username))) {
+      if (
+        !(await confirm(
+          `This town's only big enough for one ${username}. ${username} already exists locally. You reckon you're fixin' to overwrite the old wrangler and risk losin' access to their files?`
+        ))
+      ) {
+        return;
+      }
+      await deleteUser(username);
+    }
+
+    // get user from server
+    const {
+      data: user,
+      error,
+      headers,
+    } = await app.login.post({
+      username,
+      authPassword,
+    });
+
+    if (error) {
+      switch (error.status) {
+        case 422:
+          throw formatValidationErrors(error.value);
+        default:
+          throw error.value;
+      }
+    }
+
+    if (!user) {
+      throw new Error(
+        "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
+      );
+    }
+
+    if (!headers) {
+      throw new Error(
+        "Well, I'll be darned! Ain't no headers makin' its way over from the server"
+      );
+    }
+
+    const jwtToken = getHeaderValue(headers, "set-cookie");
+
+    if (!jwtToken) {
+      throw new Error(
+        "Well, I'll be darned! Ain't no JWT token makin' its way over from the server"
+      );
+    }
+
+    const privateKey = await (async () => {
+      try {
+        return await decryptPrivateKey(masterPassword, user.encryptedPrivateKey);
+      } catch (e) {
+        throw new Error(
+          "Hold your horses, cowboy! That there master password ain't quite right. Try again, partner"
+        );
+      }
+    })();
+
+    if (!privateKey) {
+      throw new Error(
+        "Hold your horses, cowboy! That there master password ain't quite right. Try again, partner"
+      );
+    }
+
     if (
-      !(await confirm(
-        `This town's only big enough for one ${username}. ${username} already exists locally. You reckon you're fixin' to overwrite the old wrangler and risk losin' access to their files?`
-      ))
+      await addUser(username, user.publicKey, user.encryptedPrivateKey, jwtToken)
     ) {
-      return;
+      setActiveUser(username);
+      console.log("Welcome cowboy!");
     }
-    await deleteUser(username);
-  }
-
-  // get user from server
-  const {
-    data: user,
-    error,
-    headers,
-  } = await app.login.post({
-    username,
-    authPassword,
-  });
-
-  if (error) {
-    switch (error.status) {
-      case 422:
-        throw formatValidationErrors(error.value);
-      default:
-        throw error.value;
-    }
-  }
-
-  if (!user) {
-    throw new Error(
-      "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
-    );
-  }
-
-  if (!headers) {
-    throw new Error(
-      "Well, I'll be darned! Ain't no headers makin' its way over from the server"
-    );
-  }
-
-  const jwtToken = getHeaderValue(headers, "set-cookie");
-
-  if (!jwtToken) {
-    throw new Error(
-      "Well, I'll be darned! Ain't no JWT token makin' its way over from the server"
-    );
-  }
-
-  const privateKey = await decryptPrivateKey(
-    masterPassword,
-    user.encryptedPrivateKey
-  );
-
-  if (!privateKey) {
-    throw new Error(
-      "Hold your horses, cowboy! That there master password ain't quite right. Try again, partner"
-    );
-  }
-
-  if (
-    await addUser(username, user.publicKey, user.encryptedPrivateKey, jwtToken)
-  ) {
-    setActiveUser(username);
-    console.log("Welcome cowboy!");
+  } catch (error) {
+    console.error((error as Error).message);
   }
 }
 
