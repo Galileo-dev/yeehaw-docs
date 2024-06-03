@@ -20,6 +20,7 @@ import {
 const log = console.log;
 
 const parser = yargs(hideBin(process.argv))
+  .scriptName("yeehaw")
   .updateStrings({
     "Options:": chalk.blue("Options:"),
   })
@@ -174,24 +175,26 @@ const parser = yargs(hideBin(process.argv))
     "download <fileId>",
     "Download a file",
     (yargs) =>
-      yargs.positional("fileId", {
-        description: "The id of the file",
-        type: "number",
-        demandOption: true,
-      })
-      .option("location", {
-        alias: "l",
-        description: "The location you want to save the file to",
-        type: "string",
-    }),
+      yargs
+        .positional("fileId", {
+          description: "The id of the file",
+          type: "number",
+          demandOption: true,
+        })
+        .option("location", {
+          alias: "l",
+          description: "The location you want to save the file to",
+          type: "string",
+        }),
     async (argv) => {
       let location = argv.location;
       if (!location) {
         location = await input({
-          message: "Alright, partner, where you reckon you wanna stash this here file? Enter the location you want to save it to.",
+          message:
+            "Alright, partner, where you reckon you wanna stash this here file? Enter the location you want to save it to.",
         });
 
-      await downloadHandler(argv.fileId, location);
+        await downloadHandler(argv.fileId, location);
       }
     }
   )
