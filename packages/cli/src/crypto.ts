@@ -6,9 +6,9 @@ import * as crypto from "crypto";
 export async function deriveKey(
   password: string,
   salt: string,
-  iterations: number = 600000,
+  iterations: number = 210000,
   keyLength: number = 32,
-  digest: string = "sha256"
+  digest: string = "sha512"
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     crypto.pbkdf2(
@@ -164,26 +164,4 @@ export function decryptSymmetricKey(
   privateKey: string
 ): Buffer {
   return crypto.privateDecrypt(privateKey, encryptedSymmetricKey);
-}
-
-// ==================================================
-//  functions used to sign and verify data using RSA
-// ==================================================
-
-export function signData(data: Buffer, privateKey: string): Buffer {
-  const sign = crypto.createSign("SHA256");
-  sign.update(data);
-  sign.end();
-  return sign.sign(privateKey);
-}
-
-export function verifySignature(
-  data: Buffer,
-  signature: Buffer,
-  publicKey: string
-): boolean {
-  const verify = crypto.createVerify("SHA256");
-  verify.update(data);
-  verify.end();
-  return verify.verify(publicKey, signature);
 }
