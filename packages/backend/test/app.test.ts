@@ -145,6 +145,11 @@ describe("Yeehaw Docs E2E", () => {
     expect(data?.publicKey).toBe("publickey123");
   });
 
+  it("should return null for a non-existing user", async () => {
+    const user = await authService.getUser("nonexistent");
+    expect(user).toBeNull();
+  });
+
   it("should upload a file", async () => {
     await registerTestUser(authService, "fromuser");
     await registerTestUser(authService, "touser");
