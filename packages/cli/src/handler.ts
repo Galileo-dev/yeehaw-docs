@@ -218,7 +218,7 @@ export async function uploadHandler(
   // retrieve the recipient's public key
   const recipientPublicKey = await getUserPublicKey(recipient);
 
-  const bunFile = await Bun.file(filePath); // needs to be converted to a file object for elysia to accept it
+  const bunFile = Bun.file(filePath); // needs to be converted to a file object for elysia to accept it
   const fileBuffer = await bunFile.arrayBuffer();
   if (!bunFile.name) {
     throw new Error(
@@ -228,9 +228,9 @@ export async function uploadHandler(
 
   const fileName = path.basename(bunFile.name);
 
-  const symmetricKey = await crypto.randomBytes(32); // 32 bytes = 256 bits for AES-256
+  const symmetricKey = crypto.randomBytes(32); // 32 bytes = 256 bits for AES-256
 
-  const fileBufferNode = await Buffer.from(fileBuffer);
+  const fileBufferNode = Buffer.from(fileBuffer);
 
   // Encrypt the file using the symmetric key
   const { encryptedData, iv, authTag } = encryptData(

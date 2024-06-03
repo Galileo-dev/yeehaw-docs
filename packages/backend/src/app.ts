@@ -160,9 +160,22 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
           )
           .post(
             "/upload",
-            ({ body: { fromUsername, toUsername, file }, fileService }) => {
+            async ({
+              jwt,
+              set,
+              cookie: { auth },
+              body: { toUsername, file },
+              fileService,
+              authService,
+            }) => {
+              const fromUsername = await authService.getUserFromJwt(
+                jwt,
+                set,
+                auth.value
+              );
+
               return fileService.upload({
-                fromUsername,
+                fromUsername: fromUsername.username,
                 toUsername,
                 file,
               });
@@ -171,7 +184,6 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
               // Validate the request body
               body: t.Object(
                 {
-                  fromUsername: UsernameModel,
                   toUsername: UsernameModel,
                   file: t.Object({
                     name: t.String(),
@@ -209,8 +221,6 @@ export const app = (userDB: UserDB, fileDB: FileDB) =>
                 set,
                 auth.value
               );
-
-              // check users permission to download file
 
               return fileService.download(id, user.username);
             },
