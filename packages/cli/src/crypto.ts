@@ -165,25 +165,3 @@ export function decryptSymmetricKey(
 ): Buffer {
   return crypto.privateDecrypt(privateKey, encryptedSymmetricKey);
 }
-
-// ==================================================
-//  functions used to sign and verify data using RSA
-// ==================================================
-
-export function signData(data: Buffer, privateKey: string): Buffer {
-  const sign = crypto.createSign("SHA256");
-  sign.update(data);
-  sign.end();
-  return sign.sign(privateKey);
-}
-
-export function verifySignature(
-  data: Buffer,
-  signature: Buffer,
-  publicKey: string
-): boolean {
-  const verify = crypto.createVerify("SHA256");
-  verify.update(data);
-  verify.end();
-  return verify.verify(publicKey, signature);
-}
