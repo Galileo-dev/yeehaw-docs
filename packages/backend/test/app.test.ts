@@ -108,6 +108,23 @@ describe("Yeehaw Docs E2E", () => {
     expect(isMatch).toBe(false);
   });
 
+  it('should allow a user to log in with the correct password', async () => {
+    const username = 'testuser';
+    const password = 'Password123!';
+
+    await authService.register(username, password, 'publickey123', {
+      iv: 'iv',
+      salt: 'salt',
+      data: 'data',
+      authTag: 'authTag',
+    });
+    const user = await authService.getUser(username);
+    if (!user) throw new Error('User not found');
+
+    const isMatch = await authService.checkPassword(password, user.passwordHash);
+    expect(isMatch).toBe(true);
+  });
+
   it("encrypted private key should be stored in the database", async () => {
     await api.register.post({
       username: "testuser",
