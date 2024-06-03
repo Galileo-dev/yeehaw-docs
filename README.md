@@ -19,33 +19,13 @@ To run the CLI, run the following commands:
 ```bash
 cd packages/cli
 bun install
-bun start
+bun link
+bun link @yeehaw-docs/cli
+yeehaw
 ```
 
-### File Structure
-
-```
-.
-├── bun.lockb
-├── index.ts
-├── package.json
-├── packages
-│   ├── backend
-│   │   ├── file.db
-│   │   ├── models.ts
-│   │   ├── package.json
-│   │   ├── README.md
-│   │   ├── src
-│   │   ├── tsconfig.json
-│   │   └── user.db
-│   ├── cli
-│   │   ├── index.ts
-│   │   └── package.json
-│   └── common
-│       ├── index.d.ts
-│       └── package.json
-├── README.md
-└── tsconfig.json
-```
+by default the CLI will connect to the backend at `https://yeehawdocs.glynny.org/` to use localhost set the `DEV` environment variable to `true`.
+on mac/linux `DEV=true yeehaw`
+on windows (powershell) `$env:DEV="true"; yeehaw`
 
 This project was created using `bun init` in bun v1.1.7. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
