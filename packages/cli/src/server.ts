@@ -1,6 +1,6 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "../../backend/src";
-import { getJwtToken } from "./db";
+import { getJwtToken, getUser } from "./db";
 import { formatValidationErrors } from "./error";
 
 const jwtToken = await getJwtToken();
@@ -48,4 +48,9 @@ export async function getFile(id: number) {
   }
 
   return data;
+}
+
+export async function checkUsernameAvailability(username: string) {
+  const user = await getUser(username);
+  return !user;
 }
