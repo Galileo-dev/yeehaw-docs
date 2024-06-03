@@ -22,9 +22,7 @@ describe("Encryption and Decryption", () => {
     try {
       await decryptPrivateKey(wrongPassword, encryptedPrivateKey);
     } catch (err: any) {
-      expect(err.message).toEqual(
-        "Unsupported state or unable to authenticate data"
-      );
+      expect(err.message).toEqual("Invalid password");
     }
   });
   it("should handle empty private key", async () => {
@@ -32,7 +30,10 @@ describe("Encryption and Decryption", () => {
     const password = "strongPassword123";
 
     const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
-    const decryptedPrivateKey = await decryptPrivateKey(password, encryptedPrivateKey);
+    const decryptedPrivateKey = await decryptPrivateKey(
+      password,
+      encryptedPrivateKey
+    );
 
     expect(decryptedPrivateKey).toEqual(privateKey);
   });
@@ -42,7 +43,10 @@ describe("Encryption and Decryption", () => {
     const password = "";
 
     const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
-    const decryptedPrivateKey = await decryptPrivateKey(password, encryptedPrivateKey);
+    const decryptedPrivateKey = await decryptPrivateKey(
+      password,
+      encryptedPrivateKey
+    );
 
     expect(decryptedPrivateKey).toEqual(privateKey);
   });
@@ -52,7 +56,10 @@ describe("Encryption and Decryption", () => {
     const password = "str0ngP@ssword123!";
 
     const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
-    const decryptedPrivateKey = await decryptPrivateKey(password, encryptedPrivateKey);
+    const decryptedPrivateKey = await decryptPrivateKey(
+      password,
+      encryptedPrivateKey
+    );
 
     expect(decryptedPrivateKey).toEqual(privateKey);
   });

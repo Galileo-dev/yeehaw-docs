@@ -94,22 +94,26 @@ export async function decryptPrivateKey(
     authTag: string;
   }
 ): Promise<string> {
-  const key = await deriveKey(password, salt);
-  const decipher = crypto.createDecipheriv(
-    "aes-256-gcm",
-    key,
-    Buffer.from(iv, "base64")
-  );
-  decipher.setAuthTag(Buffer.from(authTag, "base64"));
+  try {
+    const key = await deriveKey(password, salt);
+    const decipher = crypto.createDecipheriv(
+      "aes-256-gcm",
+      key,
+      Buffer.from(iv, "base64")
+    );
+    decipher.setAuthTag(Buffer.from(authTag, "base64"));
 
-  let decrypted = decipher.update(
-    Buffer.from(data, "base64"),
-    undefined,
-    "utf8"
-  );
-  decrypted += decipher.final("utf8");
+    let decrypted = decipher.update(
+      Buffer.from(data, "base64"),
+      undefined,
+      "utf8"
+    );
+    decrypted += decipher.final("utf8");
 
-  return decrypted;
+    return decrypted;
+  } catch (err) {
+    throw new Error("Invalid password");
+  }
 }
 
 // ========================================================
