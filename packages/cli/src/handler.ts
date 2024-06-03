@@ -332,7 +332,7 @@ export async function downloadHandler(fileId: number, location: string) {
     const user = await getActiveUser();
     if (!user) {
       throw new Error(
-        "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
+        "Unable to download that file for ya partner"
       );
     }
 
