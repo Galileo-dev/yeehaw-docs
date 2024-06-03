@@ -31,6 +31,7 @@ let userDB: UserDB;
 let fileDB: FileDB;
 let api: ReturnType<typeof treaty<App>>;
 let authService: AuthService;
+let fileService: FileService;
 
 beforeEach(() => {
   userDB = new UserDB(":memory:");
@@ -38,6 +39,7 @@ beforeEach(() => {
   const AppInstance = app(userDB, fileDB);
   api = treaty(AppInstance);
   authService = new AuthService(userDB);
+  fileService = new FileService(userDB, fileDB);
 });
 
 describe("Yeehaw Docs E2E", () => {
@@ -60,6 +62,20 @@ describe("Yeehaw Docs E2E", () => {
     expect(data?.id).toBeDefined();
   });
 
+  it("encrypted private key should be stored in the database", async () => {
+    await api.register.post({
+      username: "testuser",
+      password: "Password123!",
+      publicKey: "publickey123",
+      encryptedPrivateKey: mockEncryptedPrivateKey,
+    });
+
+    const { data: fetchedUser } = await api.user({ username: "testuser" }).get();
+    expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
+  });
+});
+
+describe("Username", () => {
   it("should not allow registering a user with an existing username", async () => {
     await registerTestUser(authService);
 
@@ -73,6 +89,39 @@ describe("Yeehaw Docs E2E", () => {
     expect(error?.value).toBe(JSON.stringify({ name: "Error", message: "Username is already taken" }));
   });
 
+  it("should get user details by username", async () => {
+    await registerTestUser(authService);
+
+    const { data } = await api.user({ username: "testuser" }).get();
+    expect(data?.username).toBe("testuser");
+    expect(data?.publicKey).toBe("publickey123");
+  });
+
+  it("should return null for a non-existing user", async () => {
+    const user = await authService.getUser("nonexistent");
+    expect(user).toBeNull();
+  });
+
+  it("should retrieve all usernames", async () => {
+    await authService.register("testuser1", "Password123!", "publickey123", {
+      iv: "iv",
+      salt: "salt",
+      data: "data",
+      authTag: "authTag",
+    });
+    await authService.register("testuser2", "Password123!", "publickey456", {
+      iv: "iv",
+      salt: "salt",
+      data: "data",
+      authTag: "authTag",
+    });
+
+    const usernames = await authService.getUsers();
+    expect(usernames).toEqual(["testuser1", "testuser2"]);
+  });
+});
+
+describe("Passwords", () => {
   it("should not allow creating a password that doesn't meet the requirements", async () => {
     const weakPassword = "weak1";
     const { error } = await api.register.post({
@@ -124,83 +173,65 @@ describe("Yeehaw Docs E2E", () => {
     const isMatch = await authService.checkPassword(password, user.passwordHash);
     expect(isMatch).toBe(true);
   });
-
-  it("encrypted private key should be stored in the database", async () => {
-    await api.register.post({
-      username: "testuser",
-      password: "Password123!",
-      publicKey: "publickey123",
-      encryptedPrivateKey: mockEncryptedPrivateKey,
-    });
-
-    const { data: fetchedUser } = await api.user({ username: "testuser" }).get();
-    expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
-  });
-
-  it("should get user details by username", async () => {
-    await registerTestUser(authService);
-
-    const { data } = await api.user({ username: "testuser" }).get();
-    expect(data?.username).toBe("testuser");
-    expect(data?.publicKey).toBe("publickey123");
-  });
-
-  it("should return null for a non-existing user", async () => {
-    const user = await authService.getUser("nonexistent");
-    expect(user).toBeNull();
-  });
-
-  it("should retrieve all usernames", async () => {
-    await authService.register("testuser1", "Password123!", "publickey123", {
-      iv: "iv",
-      salt: "salt",
-      data: "data",
-      authTag: "authTag",
-    });
-    await authService.register("testuser2", "Password123!", "publickey456", {
-      iv: "iv",
-      salt: "salt",
-      data: "data",
-      authTag: "authTag",
-    });
-
-    const usernames = await authService.getUsers();
-    expect(usernames).toEqual(["testuser1", "testuser2"]);
-  });
 });
 
-it("should upload a file", async () => {
-  await registerTestUser(authService, "fromuser");
-  await registerTestUser(authService, "touser");
+describe("File Upload and Access", () => {
+  it("should upload a file", async () => {
+    await registerTestUser(authService, "fromuser");
+    await registerTestUser(authService, "touser");
 
-  const { error } = await api.upload.post({
-    fromUsername: "fromuser",
-    toUsername: "touser",
-    file: mockEncryptedFile,
+    const { error } = await api.upload.post({
+      fromUsername: "fromuser",
+      toUsername: "touser",
+      file: mockEncryptedFile,
+    });
+    expect(error).toBeNull();
   });
-  expect(error).toBeNull();
-});
 
-it("should get files shared with a user", async () => {
-  const fileService = new FileService(userDB, fileDB);
-  await registerTestUser(authService, "fromuser");
-  await registerTestUser(authService, "touser");
+  it("should allow the intended recipient to access the file", async () => {
+    await registerTestUser(authService, "fromuser");
+    await registerTestUser(authService, "touser");
 
-  const file: YeehawFile = {
-    fromUsername: "fromuser",
-    toUsername: "touser",
-    file: mockEncryptedFile,
-  };
+    const file: YeehawFile = {
+      fromUsername: "fromuser",
+      toUsername: "touser",
+      file: mockEncryptedFile,
+    };
 
-  await fileService.upload(file);
+    await fileService.upload(file);
 
-  const { data } = await api.files.shared({ username: "touser" }).get();
+    const { data } = await api.files.shared({ username: "touser" }).get();
 
-  expect(data).toEqual([{
-    id: 1,
-    fromUsername: "fromuser",
-    name: "testfile.txt",
-    size: mockEncryptedFile.size,
-  }]);
+    expect(data).toEqual([{
+      id: 1,
+      fromUsername: "fromuser",
+      name: "testfile.txt",
+      size: mockEncryptedFile.size,
+    }]);
+  });
+
+  it("should not allow other users to access the file", async () => {
+    await registerTestUser(authService, "fromuser");
+    await registerTestUser(authService, "touser");
+    await registerTestUser(authService, "anotheruser");
+
+    const file: YeehawFile = {
+      fromUsername: "fromuser",
+      toUsername: "touser",
+      file: mockEncryptedFile,
+    };
+
+    await fileService.upload(file);
+
+    const { data: sharedFilesForAnotherUser } = await api.files.shared({ username: "anotheruser" }).get();
+    expect(sharedFilesForAnotherUser).toEqual([]);
+  });
+
+  it("should return an empty array when no files are shared with the user", async () => {
+    await registerTestUser(authService, "nouser");
+
+    const { data } = await api.files.shared({ username: "nouser" }).get();
+    expect(data).toEqual([]);
+  });
 });
 
