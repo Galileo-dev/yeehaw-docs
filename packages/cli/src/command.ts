@@ -88,7 +88,7 @@ const parser = yargs(hideBin(process.argv))
     }
   )
   .command(
-    "upload <file>",
+    "upload <file> <recipient>",
     "Upload a file to a recipient",
     (yargs) =>
       yargs
@@ -100,7 +100,7 @@ const parser = yargs(hideBin(process.argv))
         .positional("recipient", {
           description: "The username of the recipient",
           type: "string",
-          demandOption: false,
+          demandOption: true,
         })
         .option("masterPassword", {
           alias: "m",
@@ -108,13 +108,6 @@ const parser = yargs(hideBin(process.argv))
           type: "string",
         }),
     async (argv) => {
-      let recipient = argv.recipient;
-      if (!recipient) {
-        recipient = await input({
-          message: "Enter the username of the recipient",
-        });
-      }
-
       let masterPassword = argv.masterPassword;
       if (!masterPassword) {
         masterPassword = await password({
@@ -123,7 +116,7 @@ const parser = yargs(hideBin(process.argv))
         });
       }
 
-      await uploadHandler(argv.file, recipient, masterPassword);
+      await uploadHandler(argv.file, argv.recipient, masterPassword);
     }
   )
   .command(
