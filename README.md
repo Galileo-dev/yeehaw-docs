@@ -24,8 +24,15 @@ bun link @yeehaw-docs/cli
 yeehaw
 ```
 
-by default the CLI will connect to the backend at `https://yeehawdocs.glynny.org/` to use localhost set the `DEV` environment variable to `true`.
-on mac/linux `DEV=true yeehaw`
-on windows (powershell) `$env:DEV="true"; yeehaw`
+### Troubleshooting
+
+- If you get an error about the workspace when running `bun link @yeehaw-docs/cli`, you can ignore it and proceed with the next command.
+
+- If you encounter any issues with the installation, try to delete the `bun.lockb` and reinstall
+
+by default the CLI will connect to the backend at `https://yeehawdocs.glynny.org/`. To use localhost set the `DEV` environment variable to `true`.
+
+- on mac/linux run `DEV=true yeehaw`
+- on windows(powershell) run `$env:DEV="true"; yeehaw`
 
 This project was created using `bun init` in bun v1.1.7. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
