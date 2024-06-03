@@ -199,21 +199,8 @@ export async function switchUserHandler(username: string) {
 
 export async function uploadHandler(
   filePath: string,
-  recipient: string,
-  masterPassword: string
+  recipient: string
 ) {
-  // get the sender's private key from the local db
-  const sender = await getActiveUser();
-  if (!sender) {
-    throw new Error(
-      "Apologies partner, I'm afraid that sender can't be rusted up. Would ya mind loggin in first?"
-    );
-  }
-
-  const senderPrivateKey = await decryptPrivateKey(
-    masterPassword,
-    sender.encryptedPrivateKey
-  );
 
   // retrieve the recipient's public key
   const recipientPublicKey = await getUserPublicKey(recipient);
@@ -246,7 +233,7 @@ export async function uploadHandler(
 
   // we need to bundle into a file object for elysia to accept it
 
-  const { data, error } = await app.upload.post({
+  const { error } = await app.upload.post({
     toUsername: recipient,
     file: {
       name: fileName,

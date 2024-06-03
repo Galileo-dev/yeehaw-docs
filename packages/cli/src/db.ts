@@ -52,8 +52,14 @@ const db = new Database(dbFilePath);
 // ==================================================================
 
 if (process.platform === "win32") {
-  const command = `powershell.exe -Command "& {Set-Acl -Path '${dbFilePath}' -AclObject (Get-Acl -Path '${dbFilePath}').Access | ForEach-Object { $_.FileSystemRights = 'FullControl'; $_.AccessControlType = 'Allow'; $_.IdentityReference = '$(whoami)'; $_ }} "`;
-  execSync(command);
+  const command = `
+    $acl = Get-Acl -Path '${dbFilePath}';
+    $acl.SetAccessRuleProtection($true, $false);
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$(whoami)", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow");
+    $acl.SetAccessRule($rule);
+    Set-Acl -Path '${dbFilePath}' -AclObject $acl;
+  `;
+  execSync(`powershell.exe -Command "${command}"`);
 }
 
 fs.chmodSync(dbFilePath, 0o600);

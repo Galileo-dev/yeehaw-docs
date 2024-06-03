@@ -121,23 +121,8 @@ const parser = yargs(hideBin(process.argv))
           description: "The username of the recipient",
           type: "string",
           demandOption: true,
-        })
-        .option("masterPassword", {
-          alias: "m",
-          description: "The master password for the account",
-          type: "string",
         }),
-    async (argv) => {
-      let masterPassword = argv.masterPassword;
-      if (!masterPassword) {
-        masterPassword = await password({
-          message:
-            "Enter a master password: (min 8 chars, with uppercase, lowercase, number, and special character.)",
-        });
-      }
-
-      await uploadHandler(argv.file, argv.recipient, masterPassword);
-    }
+    async (argv) => await uploadHandler(argv.file, argv.recipient)
   )
   .command(
     "switch <username>",
