@@ -32,12 +32,14 @@ const mockEncryptedFile = {
 let userDB: UserDB;
 let fileDB: FileDB;
 let api: ReturnType<typeof treaty<App>>;
+let authService: AuthService;
 
 beforeEach(() => {
   userDB = new UserDB(":memory:");
   fileDB = new FileDB(":memory:");
   const App = app(userDB, fileDB);
   api = treaty(App);
+  authService = new AuthService(userDB);
 });
 
 describe("Yeehaw Docs E2E", () => {
@@ -86,15 +88,41 @@ describe("Yeehaw Docs E2E", () => {
       publicKey: "publickey123",
       encryptedPrivateKey: mockEncryptedPrivateKey,
     });
-  
+
     const passwordRequirements = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     const isPasswordStrong = passwordRequirements.test(weakPassword);
-  
+
     expect(isPasswordStrong).toBe(false);
     expect(error).toBeDefined();
     expect(error?.value).toMatch(/Expected string length greater or equal to 8/);
     expect(error?.value).toMatch(/Expected string to match/);
   });
+
+  it('should not allow a user to log in with the wrong password', async () => {
+    const username = 'testuser';
+    const correctPassword = 'Password123!';
+    const wrongPassword = 'WrongPassword123!';
+
+    await authService.register(username, correctPassword, 'publickey123', {
+      iv: 'iv',
+      salt: 'salt',
+      data: 'data',
+      authTag: 'authTag',
+    });
+
+    // Get the user from the database
+    const user = await authService.getUser(username);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Check the password
+    const isMatch = await authService.checkPassword(wrongPassword, user.passwordHash);
+
+    expect(isMatch).toBe(false);
+  });
+
 
   it("encrypted private key should be stored in the database", async () => {
     const { data } = await api.register.post({
