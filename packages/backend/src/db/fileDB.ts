@@ -11,7 +11,6 @@ export interface YeehawFile {
     iv: string;
     authTag: string;
     encryptedSymmetricKey: string;
-    signature: string;
   };
 }
 
@@ -38,8 +37,7 @@ export class FileDB extends DB {
             data BLOB NOT NULL,
             iv TEXT NOT NULL,
             auth_tag TEXT NOT NULL,
-            encrypted_symmetric_key TEXT NOT NULL,
-            signature TEXT NOT NULL
+            encrypted_symmetric_key TEXT NOT NULL
         )
     `);
   }
@@ -47,8 +45,8 @@ export class FileDB extends DB {
   async addFile(file: YeehawFile) {
     const result = this.db
       .query(
-        `INSERT INTO file (from_username, to_username, name, size, data, iv, auth_tag, encrypted_symmetric_key, signature)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) returning id`
+        `INSERT INTO file (from_username, to_username, name, size, data, iv, auth_tag, encrypted_symmetric_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?) returning id`
       )
       .get(
         file.fromUsername,
@@ -58,8 +56,7 @@ export class FileDB extends DB {
         file.file.data,
         file.file.iv,
         file.file.authTag,
-        file.file.encryptedSymmetricKey,
-        file.file.signature
+        file.file.encryptedSymmetricKey
       );
 
     return this.convertToCamelCase(result);
@@ -92,7 +89,6 @@ export class FileDB extends DB {
         iv: file.iv,
         authTag: file.auth_tag,
         encryptedSymmetricKey: file.encrypted_symmetric_key,
-        signature: file.signature,
       },
     };
   }

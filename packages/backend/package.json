@@ -12,6 +12,7 @@
     "@elysiajs/swagger": "^1.0.5",
     "@yeehaw-docs/common": "workspace:*",
     "elysia": "latest",
+    "elysia-rate-limit": "^4.1.0",
     "ora": "^8.0.1"
   },
   "devDependencies": {

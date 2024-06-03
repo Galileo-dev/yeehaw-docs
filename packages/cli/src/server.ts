@@ -1,8 +1,18 @@
 import { treaty } from "@elysiajs/eden";
 import type { App } from "../../backend/src";
+import { getJwtToken } from "./db";
 import { formatValidationErrors } from "./error";
 
-const app = treaty<App>("localhost:3001");
+const jwtToken = await getJwtToken();
+
+const headers: Record<string, string> = jwtToken ? { cookie: jwtToken } : {};
+const server_url = process.env.DEV
+  ? "localhost:3001"
+  : "https://yeehawdocs.glynny.org/script/";
+
+const app = treaty<App>(server_url, {
+  headers,
+});
 
 export async function getUserPublicKey(username: string) {
   const { data, error } = await app.user({ username }).get();

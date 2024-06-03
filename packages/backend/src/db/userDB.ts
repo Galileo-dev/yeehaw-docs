@@ -108,4 +108,27 @@ export class UserDB extends DB {
       },
     };
   }
+  // Get a user by id
+  async getUserById(id: number): Promise<User | null> {
+    const user = (await this.db
+      .query("SELECT * FROM user WHERE id = ?")
+      .get(id)) as UserDto;
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      passwordHash: user.password_hash,
+      publicKey: user.public_key,
+      encryptedPrivateKey: {
+        iv: user.iv,
+        salt: user.salt,
+        data: user.data,
+        authTag: user.auth_tag,
+      },
+    };
+  }
 }

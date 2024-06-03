@@ -1,4 +1,5 @@
-import password from '@inquirer/password';
+import input from "@inquirer/input";
+import password from "@inquirer/password";
 import chalk from "chalk";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -8,7 +9,10 @@ import {
   checkHandler,
   downloadHandler,
   loginHandler,
+  logoutHandler,
+  purgeHandler,
   signupHandler,
+  switchUserHandler,
   uploadHandler,
   usersHandler,
 } from "./handler";
@@ -16,6 +20,7 @@ import {
 const log = console.log;
 
 const parser = yargs(hideBin(process.argv))
+  .scriptName("yeehaw")
   .updateStrings({
     "Options:": chalk.blue("Options:"),
   })
@@ -23,15 +28,41 @@ const parser = yargs(hideBin(process.argv))
     "register <username>",
     "Sign up for a new account",
     (yargs) =>
-      yargs.positional("username", {
-        description: "The username for the new account",
-        type: "string",
-        demandOption: true,
-      }),
+      yargs
+        .positional("username", {
+          description: "The username for the new account",
+          type: "string",
+          demandOption: true,
+        })
+        .option("authPassword", {
+          alias: "p",
+          description:
+            "The password for the new account. (min 8 chars, with uppercase, lowercase, number, and special character.)",
+          type: "string",
+        })
+        .option("masterPassword", {
+          alias: "m",
+          description:
+            "The master password for the new account. (min 8 chars, with uppercase, lowercase, number, and special character.)",
+          type: "string",
+        }),
 
     async (argv) => {
-      const passwordPrompt = await password({ message: 'Enter a password: (min 8 chars, with uppercase, lowercase, number, and special character.)' });
-      await signupHandler(argv.username, passwordPrompt);
+      let authPassword = argv.authPassword;
+      if (!authPassword) {
+        authPassword = await password({
+          message:
+            "Enter a auth password: (min 8 chars, with uppercase, lowercase, number, and special character.)",
+        });
+      }
+      let masterPassword = argv.masterPassword;
+      if (!masterPassword) {
+        masterPassword = await password({
+          message:
+            "Enter a master password: (min 8 chars, with uppercase, lowercase, number, and special character.)",
+        });
+      }
+      await signupHandler(argv.username, authPassword, masterPassword);
     }
   )
 
@@ -45,12 +76,19 @@ const parser = yargs(hideBin(process.argv))
         demandOption: true,
       }),
     async (argv) => {
-      const passwordPrompt = await password({ message: 'Enter your password' });
-      await loginHandler(argv.username, passwordPrompt);
+      const authPassword = await password({
+        message: "Enter your auth password",
+      });
+
+      const masterPassword = await password({
+        message: "Enter your master password",
+      });
+
+      await loginHandler(argv.username, authPassword, masterPassword);
     }
   )
   .command(
-    "upload <file> <recipient> <sender>",
+    "upload <file> <recipient>",
     "Upload a file to a recipient",
     (yargs) =>
       yargs
@@ -64,23 +102,57 @@ const parser = yargs(hideBin(process.argv))
           type: "string",
           demandOption: true,
         })
-        .positional("sender", {
-          description: "The username of the sender",
+        .option("masterPassword", {
+          alias: "m",
+          description: "The master password for the account",
           type: "string",
-          demandOption: true,
         }),
-    (argv) => uploadHandler(argv.file, argv.recipient, argv.sender)
+    async (argv) => {
+      let masterPassword = argv.masterPassword;
+      if (!masterPassword) {
+        masterPassword = await password({
+          message:
+            "Enter a master password: (min 8 chars, with uppercase, lowercase, number, and special character.)",
+        });
+      }
+
+      await uploadHandler(argv.file, argv.recipient, masterPassword);
+    }
+  )
+  .command(
+    "switch <username>",
+    "Switch to another user",
+    (yargs) =>
+      yargs.positional("username", {
+        description: "The username of the user you want to switch to",
+        type: "string",
+        demandOption: true,
+      }),
+    async (argv) => switchUserHandler(argv.username)
   )
   .command(
     "users",
     "List all users",
     (yargs) => yargs,
-    (argv) => {
-      usersHandler();
+    async (argv) => {
+      await usersHandler();
     }
   )
   .command(
-    "check <username>",
+    "logout <username>",
+    "Logout a user",
+    (yargs) =>
+      yargs.positional("username", {
+        description: "The username of the user you want to logout",
+        type: "string",
+        demandOption: true,
+      }),
+    async (argv) => {
+      await logoutHandler(argv.username);
+    }
+  )
+  .command(
+    "check",
     "Check what files are available for a user",
     (yargs) =>
       yargs.positional("username", {
@@ -88,13 +160,13 @@ const parser = yargs(hideBin(process.argv))
         type: "string",
         demandOption: true,
       }),
-    (argv) => {
-      checkHandler(argv.username);
+    async (argv) => {
+      await checkHandler();
     }
   )
   .command(
-    "download <fileId> <recipient>",
-    "Download a file from a recipient",
+    "download <fileId>",
+    "Download a file",
     (yargs) =>
       yargs
         .positional("fileId", {
@@ -102,14 +174,29 @@ const parser = yargs(hideBin(process.argv))
           type: "number",
           demandOption: true,
         })
-        .positional("recipient", {
-          description: "The recipient's username",
+        .option("location", {
+          alias: "l",
+          description: "The location you want to save the file to",
           type: "string",
-          demandOption: true,
         }),
+    async (argv) => {
+      let location = argv.location;
+      if (!location) {
+        location = await input({
+          message:
+            "Alright, partner, where you reckon you wanna stash this here file? Enter the location you want to save it to.",
+        });
 
-    (argv) => {
-      downloadHandler(argv.fileId, argv.recipient);
+        await downloadHandler(argv.fileId, location);
+      }
+    }
+  )
+  .command(
+    "purge",
+    "Purge all data",
+    (yargs) => yargs,
+    async (argv) => {
+      await purgeHandler();
     }
   )
   .command(
@@ -134,5 +221,11 @@ const parser = yargs(hideBin(process.argv))
       );
     }
   )
-  .showHelpOnFail(false, "Use --help for available options")
-  .parse();
+
+  .showHelpOnFail(false, "Use --help for available options");
+
+try {
+  const argv = await parser.parse();
+} catch (err: any) {
+  console.error(err);
+}

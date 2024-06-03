@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "CLI for the file sharing service",
   "type": "module",
+  "main": "index.ts",
   "bin": {
     "yeehaw": "./index.ts"
   },
   "scripts": {
-    "dev": "bun run index.ts"
+    "dev": "bun run index.ts",
+    "build": "bun build"
   },
   "dependencies": {
     "@inquirer/prompts": "^5.0.5",

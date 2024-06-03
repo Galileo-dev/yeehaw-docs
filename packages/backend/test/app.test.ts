@@ -6,7 +6,7 @@ import { FileDB, YeehawFile } from "../src/db/fileDB";
 import { UserDB } from "../src/db/userDB";
 import { AuthService } from "../src/services/authService";
 import { FileService } from "../src/services/fileService";
-import { registerTestUser } from "./utils";
+import { getJWT, registerTestUser } from "./utils";
 
 const mockEncryptedPrivateKey = {
   iv: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
@@ -22,10 +22,13 @@ const mockEncryptedFile = {
   iv: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
   salt: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
   authTag: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
-  encryptedSymmetricKey: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
+  encryptedSymmetricKey: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString(
+    "base64"
+  ),
   signature: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]).toString("base64"),
 };
-const passwordRequirements = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const passwordRequirements =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 let userDB: UserDB;
 let fileDB: FileDB;
@@ -45,7 +48,9 @@ beforeEach(() => {
 describe("Yeehaw Docs E2E", () => {
   it("should return the correct welcome message with version", async () => {
     const { data, error } = await api.index.get();
-    expect(data).toBe("Hello, Welcome to the super secure file server\n\n(version: undefined)");
+    expect(data).toBe(
+      "Hello, Welcome to the super secure file server\n\n(version: undefined)"
+    );
     expect(error).toBeNull();
   });
 
@@ -70,7 +75,9 @@ describe("Yeehaw Docs E2E", () => {
       encryptedPrivateKey: mockEncryptedPrivateKey,
     });
 
-    const { data: fetchedUser } = await api.user({ username: "testuser" }).get();
+    const { data: fetchedUser } = await api
+      .user({ username: "testuser" })
+      .get();
     expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
   });
 });
@@ -86,13 +93,34 @@ describe("Username", () => {
       encryptedPrivateKey: mockEncryptedPrivateKey,
     });
     expect(error).toBeDefined();
-    expect(error?.value).toBe(JSON.stringify({ name: "Error", message: "Username is already taken" }));
+    expect(error?.value).toBe(
+      JSON.stringify({ name: "Error", message: "Username is already taken" })
+    );
+  });
+
+  it("encrypted private key should be stored in the database", async () => {
+    const authService = new AuthService(userDB);
+    const { data, headers } = await api.register.post({
+      username: "testuser",
+      password: "Password123!",
+      publicKey: "publickey123",
+      encryptedPrivateKey: mockEncryptedPrivateKey,
+    });
+
+    const { data: fetchedUser, error } = await api
+      .user({
+        username: "testuser",
+      })
+      .get({ headers: await getJWT(authService, "testuser") });
+    expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
   });
 
   it("should get user details by username", async () => {
     await registerTestUser(authService);
 
-    const { data } = await api.user({ username: "testuser" }).get();
+    const { data } = await api
+      .user({ username: "testuser" })
+      .get({ headers: await getJWT(authService, "testuser") });
     expect(data?.username).toBe("testuser");
     expect(data?.publicKey).toBe("publickey123");
   });
@@ -134,43 +162,51 @@ describe("Passwords", () => {
     const isPasswordStrong = passwordRequirements.test(weakPassword);
     expect(isPasswordStrong).toBe(false);
     expect(error).toBeDefined();
-    expect(error?.value).toMatch(/Expected string length greater or equal to 8/);
+    expect(error?.value).toMatch(
+      /Expected string length greater or equal to 8/
+    );
     expect(error?.value).toMatch(/Expected string to match/);
   });
 
-  it('should not allow a user to log in with the wrong password', async () => {
-    const username = 'testuser';
-    const correctPassword = 'Password123!';
-    const wrongPassword = 'WrongPassword123!';
+  it("should not allow a user to log in with the wrong password", async () => {
+    const username = "testuser";
+    const correctPassword = "Password123!";
+    const wrongPassword = "WrongPassword123!";
 
-    await authService.register(username, correctPassword, 'publickey123', {
-      iv: 'iv',
-      salt: 'salt',
-      data: 'data',
-      authTag: 'authTag',
+    await authService.register(username, correctPassword, "publickey123", {
+      iv: "iv",
+      salt: "salt",
+      data: "data",
+      authTag: "authTag",
     });
 
     const user = await authService.getUser(username);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error("User not found");
 
-    const isMatch = await authService.checkPassword(wrongPassword, user.passwordHash);
+    const isMatch = await authService.checkPassword(
+      wrongPassword,
+      user.passwordHash
+    );
     expect(isMatch).toBe(false);
   });
 
-  it('should allow a user to log in with the correct password', async () => {
-    const username = 'testuser';
-    const password = 'Password123!';
+  it("should allow a user to log in with the correct password", async () => {
+    const username = "testuser";
+    const password = "Password123!";
 
-    await authService.register(username, password, 'publickey123', {
-      iv: 'iv',
-      salt: 'salt',
-      data: 'data',
-      authTag: 'authTag',
+    await authService.register(username, password, "publickey123", {
+      iv: "iv",
+      salt: "salt",
+      data: "data",
+      authTag: "authTag",
     });
     const user = await authService.getUser(username);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error("User not found");
 
-    const isMatch = await authService.checkPassword(password, user.passwordHash);
+    const isMatch = await authService.checkPassword(
+      password,
+      user.passwordHash
+    );
     expect(isMatch).toBe(true);
   });
 });
@@ -180,11 +216,14 @@ describe("File Upload and Access", () => {
     await registerTestUser(authService, "fromuser");
     await registerTestUser(authService, "touser");
 
-    const { error } = await api.upload.post({
-      fromUsername: "fromuser",
-      toUsername: "touser",
-      file: mockEncryptedFile,
-    });
+    const { error } = await api.upload.post(
+      {
+        fromUsername: "fromuser",
+        toUsername: "touser",
+        file: mockEncryptedFile,
+      },
+      { headers: await getJWT(authService, "fromuser") }
+    );
     expect(error).toBeNull();
   });
 
@@ -200,14 +239,18 @@ describe("File Upload and Access", () => {
 
     await fileService.upload(file);
 
-    const { data } = await api.files.shared({ username: "touser" }).get();
+    const { data } = await api.files.shared.get({
+      headers: await getJWT(authService, "touser"),
+    });
 
-    expect(data).toEqual([{
-      id: 1,
-      fromUsername: "fromuser",
-      name: "testfile.txt",
-      size: mockEncryptedFile.size,
-    }]);
+    expect(data).toEqual([
+      {
+        id: 1,
+        fromUsername: "fromuser",
+        name: "testfile.txt",
+        size: mockEncryptedFile.size,
+      },
+    ]);
   });
 
   it("should not allow other users to access the file", async () => {
@@ -223,7 +266,9 @@ describe("File Upload and Access", () => {
 
     await fileService.upload(file);
 
-    const { data: sharedFilesForAnotherUser } = await api.files.shared({ username: "anotheruser" }).get();
+    const { data: sharedFilesForAnotherUser } = await api.files
+      .shared({ username: "anotheruser" })
+      .get();
     expect(sharedFilesForAnotherUser).toEqual([]);
   });
 
@@ -236,11 +281,11 @@ describe("File Upload and Access", () => {
 });
 
 describe("File Download and Access", () => {
-  it('should allow a user to download a file', async () => {
-    await registerTestUser(authService, 'testuser');
+  it("should allow a user to download a file", async () => {
+    await registerTestUser(authService, "testuser");
     const file: YeehawFile = {
-      fromUsername: 'testuser',
-      toUsername: 'testuser',
+      fromUsername: "testuser",
+      toUsername: "testuser",
       file: mockEncryptedFile,
     };
     const uploadedFile = await fileService.upload(file);
@@ -253,26 +298,26 @@ describe("File Download and Access", () => {
     }
   });
 
-  it('should throw an error when trying to download a non-existent file', async () => {
-    expect(fileService.download(9999)).rejects.toThrow('File not found: 9999');
+  it("should throw an error when trying to download a non-existent file", async () => {
+    expect(fileService.download(9999)).rejects.toThrow("File not found: 9999");
   });
 
-  it('should throw an error when trying to download a file with an invalid ID', async () => {
+  it("should throw an error when trying to download a file with an invalid ID", async () => {
     expect(fileService.download(-1)).rejects.toThrow();
   });
 
-  it('should download the correct file when multiple files exist', async () => {
-    await registerTestUser(authService, 'testuser');
+  it("should download the correct file when multiple files exist", async () => {
+    await registerTestUser(authService, "testuser");
     const mockEncryptedFile2 = { ...mockEncryptedFile, name: "testfile2.txt" };
 
     const yeehawFile1: YeehawFile = {
-      fromUsername: 'testuser',
-      toUsername: 'testuser',
+      fromUsername: "testuser",
+      toUsername: "testuser",
       file: mockEncryptedFile,
     };
     const yeehawFile2: YeehawFile = {
-      fromUsername: 'testuser',
-      toUsername: 'testuser',
+      fromUsername: "testuser",
+      toUsername: "testuser",
       file: mockEncryptedFile2,
     };
 
@@ -285,7 +330,7 @@ describe("File Download and Access", () => {
     if (file1.id && file2.id) {
       const downloadedFile1 = await fileService.download(file1.id);
       expect(downloadedFile1.id).toEqual(file1.id);
-  
+
       const downloadedFile2 = await fileService.download(file2.id);
       expect(downloadedFile2.id).toEqual(file2.id);
     }
