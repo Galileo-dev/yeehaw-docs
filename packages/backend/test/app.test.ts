@@ -77,7 +77,7 @@ describe("Yeehaw Docs E2E", () => {
 
     const { data: fetchedUser } = await api
       .user({ username: "testuser" })
-      .get();
+      .get({ headers: await getJWT(authService, "testuser") });
     expect(fetchedUser?.encryptedPrivateKey).toEqual(mockEncryptedPrivateKey);
   });
 });
@@ -218,7 +218,6 @@ describe("File Upload and Access", () => {
 
     const { error } = await api.upload.post(
       {
-        fromUsername: "fromuser",
         toUsername: "touser",
         file: mockEncryptedFile,
       },
@@ -266,16 +265,18 @@ describe("File Upload and Access", () => {
 
     await fileService.upload(file);
 
-    const { data: sharedFilesForAnotherUser } = await api.files
-      .shared({ username: "anotheruser" })
-      .get();
+    const { data: sharedFilesForAnotherUser } = await api.files.shared.get({
+      headers: await getJWT(authService, "anotheruser"),
+    });
     expect(sharedFilesForAnotherUser).toEqual([]);
   });
 
   it("should return an empty array when no files are shared with the user", async () => {
     await registerTestUser(authService, "nouser");
 
-    const { data } = await api.files.shared({ username: "nouser" }).get();
+    const { data } = await api.files.shared.get({
+      headers: await getJWT(authService, "nouser"),
+    });
     expect(data).toEqual([]);
   });
 });
@@ -292,18 +293,23 @@ describe("File Download and Access", () => {
     expect(uploadedFile.id).toBeDefined();
 
     if (uploadedFile.id) {
-      const downloadedFile = await fileService.download(uploadedFile.id);
+      const downloadedFile = await fileService.download(
+        uploadedFile.id,
+        "testuser"
+      );
 
       expect(downloadedFile.id).toEqual(uploadedFile.id);
     }
   });
 
   it("should throw an error when trying to download a non-existent file", async () => {
-    expect(fileService.download(9999)).rejects.toThrow("File not found: 9999");
+    expect(fileService.download(9999, "testuser")).rejects.toThrow(
+      "File not found: 9999"
+    );
   });
 
   it("should throw an error when trying to download a file with an invalid ID", async () => {
-    expect(fileService.download(-1)).rejects.toThrow();
+    expect(fileService.download(-1, "testuser")).rejects.toThrow();
   });
 
   it("should download the correct file when multiple files exist", async () => {
@@ -328,10 +334,10 @@ describe("File Download and Access", () => {
     expect(file2.id).toBeDefined();
 
     if (file1.id && file2.id) {
-      const downloadedFile1 = await fileService.download(file1.id);
+      const downloadedFile1 = await fileService.download(file1.id, "testuser");
       expect(downloadedFile1.id).toEqual(file1.id);
 
-      const downloadedFile2 = await fileService.download(file2.id);
+      const downloadedFile2 = await fileService.download(file2.id, "testuser");
       expect(downloadedFile2.id).toEqual(file2.id);
     }
   });
