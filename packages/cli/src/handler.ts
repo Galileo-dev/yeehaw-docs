@@ -327,61 +327,65 @@ export async function checkUsernameAvailability(username: string) {
 }
 
 export async function downloadHandler(fileId: number, location: string) {
-  // get the recipient's private key from the local db
-  const user = await getActiveUser();
-  if (!user) {
-    throw new Error(
-      "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
-    );
-  }
-
-  const masterPassword = await password({
-    message: "Mind sharin' your master password?",
-  });
-
-  const recipientPrivateKey = await decryptPrivateKey(
-    masterPassword,
-    user.encryptedPrivateKey
-  );
-
-  // get the file from the server
-  const {
-    file: { name, iv, authTag, encryptedSymmetricKey, data: encryptedData },
-  } = await getFile(fileId);
-
-  // decrypt the symmetric key used to encrypt the file
-  const decryptedSymmetricKey = decryptSymmetricKey(
-    Buffer.from(encryptedSymmetricKey, "base64"),
-    recipientPrivateKey
-  );
-
-  // Decrypt the file using the symmetric key
-  const decryptedData = decryptData(
-    Buffer.from(encryptedData, "base64"),
-    decryptedSymmetricKey,
-    Buffer.from(iv, "base64"),
-    Buffer.from(authTag, "base64")
-  );
-
-  const filePath = path.join(location, name);
-
-  // check if filename exists in the specified directory
-  if (fs.existsSync(filePath)) {
-    const overwrite = await confirm(
-      `Seems to me this here file, ${name}, done already pitched its tent in ${location}. You fixin' to overwrite it?`
-    );
-    if (!overwrite) {
-      console.log(
-        "Well, reckon it's time to call off this here download. Yesiree, that file won't be moseyin' 'round these parts anytime soon"
+  try {
+    // get the recipient's private key from the local db
+    const user = await getActiveUser();
+    if (!user) {
+      throw new Error(
+        "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
       );
-      return;
     }
-  }
 
-  fs.writeFileSync(filePath, decryptedData);
-  console.log(
-    "YeeeeeHAW! that there file's been lasooed 'n' wrangled in without a hitch!"
-  );
+    const masterPassword = await password({
+      message: "Mind sharin' your master password?",
+    });
+
+    const recipientPrivateKey = await decryptPrivateKey(
+      masterPassword,
+      user.encryptedPrivateKey
+    );
+
+    // get the file from the server
+    const {
+      file: { name, iv, authTag, encryptedSymmetricKey, data: encryptedData },
+    } = await getFile(fileId);
+
+    // decrypt the symmetric key used to encrypt the file
+    const decryptedSymmetricKey = decryptSymmetricKey(
+      Buffer.from(encryptedSymmetricKey, "base64"),
+      recipientPrivateKey
+    );
+
+    // Decrypt the file using the symmetric key
+    const decryptedData = decryptData(
+      Buffer.from(encryptedData, "base64"),
+      decryptedSymmetricKey,
+      Buffer.from(iv, "base64"),
+      Buffer.from(authTag, "base64")
+    );
+
+    const filePath = path.join(location, name);
+
+    // check if filename exists in the specified directory
+    if (fs.existsSync(filePath)) {
+      const overwrite = await confirm(
+        `Seems to me this here file, ${name}, done already pitched its tent in ${location}. You fixin' to overwrite it?`
+      );
+      if (!overwrite) {
+        console.log(
+          "Well, reckon it's time to call off this here download. Yesiree, that file won't be moseyin' 'round these parts anytime soon"
+        );
+        return;
+      }
+    }
+
+    fs.writeFileSync(filePath, decryptedData);
+    console.log(
+      "YeeeeeHAW! that there file's been lasooed 'n' wrangled in without a hitch!"
+    );
+  } catch (error) {
+    console.error("Hold your horses, cowboy! That there master password ain't quite right"); // Print the error message without stack trace
+  }
 }
 
 export async function purgeHandler() {
