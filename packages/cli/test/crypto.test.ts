@@ -27,4 +27,33 @@ describe("Encryption and Decryption", () => {
       );
     }
   });
+  it("should handle empty private key", async () => {
+    const privateKey = "";
+    const password = "strongPassword123";
+
+    const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
+    const decryptedPrivateKey = await decryptPrivateKey(password, encryptedPrivateKey);
+
+    expect(decryptedPrivateKey).toEqual(privateKey);
+  });
+
+  it("should handle empty password", async () => {
+    const privateKey = "mySuperSecretPrivateKey";
+    const password = "";
+
+    const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
+    const decryptedPrivateKey = await decryptPrivateKey(password, encryptedPrivateKey);
+
+    expect(decryptedPrivateKey).toEqual(privateKey);
+  });
+
+  it("should handle special characters", async () => {
+    const privateKey = "my$uper$ecretPrivateKey!";
+    const password = "str0ngP@ssword123!";
+
+    const encryptedPrivateKey = await encryptPrivateKey(privateKey, password);
+    const decryptedPrivateKey = await decryptPrivateKey(password, encryptedPrivateKey);
+
+    expect(decryptedPrivateKey).toEqual(privateKey);
+  });
 });
