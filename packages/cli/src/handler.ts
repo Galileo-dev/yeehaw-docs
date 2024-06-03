@@ -140,7 +140,7 @@ export async function loginHandler(
 
     if (!user) {
       throw new Error(
-        "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
+        "Apologies Partner, couldn't log you in"
       );
     }
 
