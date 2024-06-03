@@ -206,6 +206,13 @@ export async function uploadHandler(
   const recipientPublicKey = await getUserPublicKey(recipient);
 
   const bunFile = Bun.file(filePath); // needs to be converted to a file object for elysia to accept it
+
+  if (bunFile.size > 10485760) { // 10MB
+    throw new Error(
+      "Hold your horses, cowboy. That file's too big for the saddle. You'll need to rustle up a smaller one, partner"
+    );
+  }
+
   const fileBuffer = await bunFile.arrayBuffer();
   if (!bunFile.name) {
     throw new Error(
