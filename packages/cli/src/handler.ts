@@ -2,7 +2,7 @@ import { treaty } from "@elysiajs/eden";
 import password from "@inquirer/password";
 import chalk from "chalk";
 import * as crypto from "crypto";
-import * as fs from 'fs';
+import * as fs from "fs";
 import * as path from "path";
 import type { App } from "../../backend/src";
 import {
@@ -31,8 +31,10 @@ import { getHeaderValue } from "./utils";
 const jwtToken = await getJwtToken();
 
 const headers: Record<string, string> = jwtToken ? { cookie: jwtToken } : {};
-
-const app = treaty<App>("localhost:3001", {
+const server_url = process.env.DEV
+  ? "localhost:3001"
+  : "https://yeehawdocs.glynny.org/script/";
+const app = treaty<App>(server_url, {
   headers,
 });
 export async function signupHandler(
@@ -79,18 +81,24 @@ export async function signupHandler(
   }
 
   if (!headers) {
-    throw new Error("Well, I'll be darned! Ain't no headers makin' its way over from the server");
+    throw new Error(
+      "Well, I'll be darned! Ain't no headers makin' its way over from the server"
+    );
   }
 
   const jwtToken = getHeaderValue(headers, "set-cookie");
 
   if (!jwtToken) {
-    throw new Error("Well, I'll be darned! Ain't no JWT token makin' its way over from the server");
+    throw new Error(
+      "Well, I'll be darned! Ain't no JWT token makin' its way over from the server"
+    );
   }
 
   if (await addUser(username, publicKey, encryptedPrivateKey, jwtToken)) {
     setActiveUser(username);
-    console.log("Yahoooo!! We've got ourselves a new cowpoke in town! Saddle up and ride on, cowboy!");
+    console.log(
+      "Yahoooo!! We've got ourselves a new cowpoke in town! Saddle up and ride on, cowboy!"
+    );
   }
 }
 
@@ -130,17 +138,23 @@ export async function loginHandler(
   }
 
   if (!user) {
-    throw new Error("Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?");
+    throw new Error(
+      "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
+    );
   }
 
   if (!headers) {
-    throw new Error("Well, I'll be darned! Ain't no headers makin' its way over from the server");
+    throw new Error(
+      "Well, I'll be darned! Ain't no headers makin' its way over from the server"
+    );
   }
 
   const jwtToken = getHeaderValue(headers, "set-cookie");
 
   if (!jwtToken) {
-    throw new Error("Well, I'll be darned! Ain't no JWT token makin' its way over from the server");
+    throw new Error(
+      "Well, I'll be darned! Ain't no JWT token makin' its way over from the server"
+    );
   }
 
   const privateKey = await decryptPrivateKey(
@@ -149,7 +163,9 @@ export async function loginHandler(
   );
 
   if (!privateKey) {
-    throw new Error("Hold your horses, cowboy! That there master password ain't quite right. Try again, partner");
+    throw new Error(
+      "Hold your horses, cowboy! That there master password ain't quite right. Try again, partner"
+    );
   }
 
   if (
@@ -162,17 +178,23 @@ export async function loginHandler(
 
 export async function logoutHandler(username: string) {
   await deleteUser(username);
-  console.log("Well, you've kicked off them boots and hung up your hat like a true cowboy. Until next time, partner");
+  console.log(
+    "Well, you've kicked off them boots and hung up your hat like a true cowboy. Until next time, partner"
+  );
 }
 
 export async function switchUserHandler(username: string) {
   const user = await getUser(username);
   if (!user) {
-    throw new Error("Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?");
+    throw new Error(
+      "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
+    );
   }
 
   setActiveUser(username);
-  console.log("Well, look at you, swappin' saddles like a seasoned rider. All set in your new spot, partner?");
+  console.log(
+    "Well, look at you, swappin' saddles like a seasoned rider. All set in your new spot, partner?"
+  );
 }
 
 export async function uploadHandler(
@@ -183,7 +205,9 @@ export async function uploadHandler(
   // get the sender's private key from the local db
   const sender = await getActiveUser();
   if (!sender) {
-    throw new Error("Apologies partner, I'm afraid that sender can't be rusted up. Would ya mind loggin in first?");
+    throw new Error(
+      "Apologies partner, I'm afraid that sender can't be rusted up. Would ya mind loggin in first?"
+    );
   }
 
   const senderPrivateKey = await decryptPrivateKey(
@@ -197,7 +221,9 @@ export async function uploadHandler(
   const bunFile = await Bun.file(filePath); // needs to be converted to a file object for elysia to accept it
   const fileBuffer = await bunFile.arrayBuffer();
   if (!bunFile.name) {
-    throw new Error("Hold your horses, cowboy. Seems like that file name ain't quite cuttin' the mustard. Better rustle up a proper one, partner");
+    throw new Error(
+      "Hold your horses, cowboy. Seems like that file name ain't quite cuttin' the mustard. Better rustle up a proper one, partner"
+    );
   }
 
   const fileName = path.basename(bunFile.name);
@@ -243,7 +269,9 @@ export async function uploadHandler(
     }
   }
 
-  console.log("That there file's been sent well on its way. Nicely done, partner");
+  console.log(
+    "That there file's been sent well on its way. Nicely done, partner"
+  );
 }
 
 export async function usersHandler() {
@@ -254,7 +282,11 @@ export async function usersHandler() {
   const activeUser = await getActiveUser();
 
   if (users.length === 0) {
-    console.log(chalk.redBright("Looks like the town's deserted, partner. Time to strap on your spurs and register or login."));
+    console.log(
+      chalk.redBright(
+        "Looks like the town's deserted, partner. Time to strap on your spurs and register or login."
+      )
+    );
     return;
   }
   users.forEach((user) => {
@@ -281,7 +313,9 @@ export async function checkHandler() {
   }
 
   if (!data) {
-    throw new Error("Well, ain't that a kick in the stirrups? Seems we done failed to wrangle them files");
+    throw new Error(
+      "Well, ain't that a kick in the stirrups? Seems we done failed to wrangle them files"
+    );
   }
 
   console.log(chalk.green.bold(`Files available:`));
@@ -303,7 +337,9 @@ export async function downloadHandler(fileId: number, location: string) {
   // get the recipient's private key from the local db
   const user = await getActiveUser();
   if (!user) {
-    throw new Error("Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?");
+    throw new Error(
+      "Ain't no cowboy in these parts with that handle. You mighty sure ya got the right feller?"
+    );
   }
 
   const masterPassword = await password({
@@ -326,7 +362,6 @@ export async function downloadHandler(fileId: number, location: string) {
     recipientPrivateKey
   );
 
-
   // Decrypt the file using the symmetric key
   const decryptedData = decryptData(
     Buffer.from(encryptedData, "base64"),
@@ -339,15 +374,21 @@ export async function downloadHandler(fileId: number, location: string) {
 
   // check if filename exists in the specified directory
   if (fs.existsSync(filePath)) {
-    const overwrite = await confirm(`Seems to me this here file, ${name}, done already pitched its tent in ${location}. You fixin' to overwrite it?`);
+    const overwrite = await confirm(
+      `Seems to me this here file, ${name}, done already pitched its tent in ${location}. You fixin' to overwrite it?`
+    );
     if (!overwrite) {
-      console.log("Well, reckon it's time to call off this here download. Yesiree, that file won't be moseyin' 'round these parts anytime soon");
+      console.log(
+        "Well, reckon it's time to call off this here download. Yesiree, that file won't be moseyin' 'round these parts anytime soon"
+      );
       return;
     }
   }
 
   fs.writeFileSync(filePath, decryptedData);
-  console.log("YeeeeeHAW! that there file's been lasooed 'n' wrangled in without a hitch!");
+  console.log(
+    "YeeeeeHAW! that there file's been lasooed 'n' wrangled in without a hitch!"
+  );
 }
 
 export async function purgeHandler() {
@@ -357,6 +398,8 @@ export async function purgeHandler() {
     )
   ) {
     await purgeData();
-    console.log("Well, reckon we done cleared them data trails like a tumbleweed in a prairie breeze. All spick and span now, partner!");
+    console.log(
+      "Well, reckon we done cleared them data trails like a tumbleweed in a prairie breeze. All spick and span now, partner!"
+    );
   }
 }

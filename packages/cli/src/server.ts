@@ -6,8 +6,11 @@ import { formatValidationErrors } from "./error";
 const jwtToken = await getJwtToken();
 
 const headers: Record<string, string> = jwtToken ? { cookie: jwtToken } : {};
+const server_url = process.env.DEV
+  ? "localhost:3001"
+  : "https://yeehawdocs.glynny.org/script/";
 
-const app = treaty<App>("localhost:3001", {
+const app = treaty<App>(server_url, {
   headers,
 });
 
