@@ -25,7 +25,7 @@ import {
   setActiveUser,
 } from "./db";
 import { formatValidationErrors } from "./error";
-import { getFile, getUserPublicKey } from "./server";
+import { getFile, getUserPublicKey, checkUsernameAvailability } from "./server";
 import { getHeaderValue } from "./utils";
 
 const jwtToken = await getJwtToken();
@@ -328,11 +328,6 @@ export async function checkHandler() {
       )
     );
   });
-}
-
-export async function checkUsernameAvailability(username: string) {
-  const user = await getUser(username);
-  return !user;
 }
 
 export async function downloadHandler(fileId: number, location: string) {
