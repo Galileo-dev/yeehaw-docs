@@ -235,3 +235,59 @@ describe("File Upload and Access", () => {
   });
 });
 
+describe("File Download and Access", () => {
+  it('should allow a user to download a file', async () => {
+    await registerTestUser(authService, 'testuser');
+    const file: YeehawFile = {
+      fromUsername: 'testuser',
+      toUsername: 'testuser',
+      file: mockEncryptedFile,
+    };
+    const uploadedFile = await fileService.upload(file);
+    expect(uploadedFile.id).toBeDefined();
+
+    if (uploadedFile.id) {
+      const downloadedFile = await fileService.download(uploadedFile.id);
+
+      expect(downloadedFile.id).toEqual(uploadedFile.id);
+    }
+  });
+
+  it('should throw an error when trying to download a non-existent file', async () => {
+    expect(fileService.download(9999)).rejects.toThrow('File not found: 9999');
+  });
+
+  it('should throw an error when trying to download a file with an invalid ID', async () => {
+    expect(fileService.download(-1)).rejects.toThrow();
+  });
+
+  it('should download the correct file when multiple files exist', async () => {
+    await registerTestUser(authService, 'testuser');
+    const mockEncryptedFile2 = { ...mockEncryptedFile, name: "testfile2.txt" };
+
+    const yeehawFile1: YeehawFile = {
+      fromUsername: 'testuser',
+      toUsername: 'testuser',
+      file: mockEncryptedFile,
+    };
+    const yeehawFile2: YeehawFile = {
+      fromUsername: 'testuser',
+      toUsername: 'testuser',
+      file: mockEncryptedFile2,
+    };
+
+    const file1 = await fileService.upload(yeehawFile1);
+    const file2 = await fileService.upload(yeehawFile2);
+
+    expect(file1.id).toBeDefined();
+    expect(file2.id).toBeDefined();
+
+    if (file1.id && file2.id) {
+      const downloadedFile1 = await fileService.download(file1.id);
+      expect(downloadedFile1.id).toEqual(file1.id);
+  
+      const downloadedFile2 = await fileService.download(file2.id);
+      expect(downloadedFile2.id).toEqual(file2.id);
+    }
+  });
+});
