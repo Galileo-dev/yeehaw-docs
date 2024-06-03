@@ -247,7 +247,6 @@ export async function uploadHandler(
   // we need to bundle into a file object for elysia to accept it
 
   const { data, error } = await app.upload.post({
-    fromUsername: sender.username,
     toUsername: recipient,
     file: {
       name: fileName,

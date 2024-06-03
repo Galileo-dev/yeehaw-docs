@@ -70,19 +70,39 @@ const parser = yargs(hideBin(process.argv))
     "login <username>",
     "login to an existing account",
     (yargs) =>
-      yargs.positional("username", {
-        description: "The username for the account",
-        type: "string",
-        demandOption: true,
-      }),
+      yargs
+        .positional("username", {
+          description: "The username for the account",
+          type: "string",
+          demandOption: true,
+        })
+        .option("authPassword", {
+          alias: "p",
+          description:
+            "The password for the new account. (min 8 chars, with uppercase, lowercase, number, and special character.)",
+          type: "string",
+        })
+        .option("masterPassword", {
+          alias: "m",
+          description:
+            "The master password for the new account. (min 8 chars, with uppercase, lowercase, number, and special character.)",
+          type: "string",
+        }),
     async (argv) => {
-      const authPassword = await password({
-        message: "Enter your auth password",
-      });
-
-      const masterPassword = await password({
-        message: "Enter your master password",
-      });
+      let authPassword = argv.authPassword;
+      if (!authPassword) {
+        authPassword = await password({
+          message:
+            "Enter a auth password: (min 8 chars, with uppercase, lowercase, number, and special character.)",
+        });
+      }
+      let masterPassword = argv.masterPassword;
+      if (!masterPassword) {
+        masterPassword = await password({
+          message:
+            "Enter a master password: (min 8 chars, with uppercase, lowercase, number, and special character.)",
+        });
+      }
 
       await loginHandler(argv.username, authPassword, masterPassword);
     }
