@@ -78,6 +78,24 @@ describe("Yeehaw Docs E2E", () => {
     );
   });
 
+  it("should not allow creating a password that doesn't meet the requirements", async () => {
+    const weakPassword = "weak1";
+    const { error } = await api.register.post({
+      username: "testuser",
+      password: weakPassword,
+      publicKey: "publickey123",
+      encryptedPrivateKey: mockEncryptedPrivateKey,
+    });
+  
+    const passwordRequirements = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const isPasswordStrong = passwordRequirements.test(weakPassword);
+  
+    expect(isPasswordStrong).toBe(false);
+    expect(error).toBeDefined();
+    expect(error?.value).toMatch(/Expected string length greater or equal to 8/);
+    expect(error?.value).toMatch(/Expected string to match/);
+  });
+
   it("encrypted private key should be stored in the database", async () => {
     const { data } = await api.register.post({
       username: "testuser",
