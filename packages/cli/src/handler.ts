@@ -340,10 +340,15 @@ export async function downloadHandler(fileId: number, location: string) {
       message: "Mind sharin' your master password?",
     });
 
-    const recipientPrivateKey = await decryptPrivateKey(
-      masterPassword,
-      user.encryptedPrivateKey
-    );
+    const recipientPrivateKey = await (async () => {
+      try {
+        return await decryptPrivateKey(masterPassword, user.encryptedPrivateKey);
+      } catch (e) {
+        throw new Error(
+          "Hold your horses, cowboy! That there master password ain't quite right"
+        );
+      }
+    })();
 
     // get the file from the server
     const {
@@ -384,7 +389,7 @@ export async function downloadHandler(fileId: number, location: string) {
       "YeeeeeHAW! that there file's been lasooed 'n' wrangled in without a hitch!"
     );
   } catch (error) {
-    console.error("Hold your horses, cowboy! That there master password ain't quite right"); // Print the error message without stack trace
+    console.error((error as Error).message); // Print the error message without stack trace
   }
 }
 
