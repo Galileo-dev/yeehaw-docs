@@ -150,38 +150,57 @@ describe("Yeehaw Docs E2E", () => {
     expect(user).toBeNull();
   });
 
-  it("should upload a file", async () => {
-    await registerTestUser(authService, "fromuser");
-    await registerTestUser(authService, "touser");
-
-    const { error } = await api.upload.post({
-      fromUsername: "fromuser",
-      toUsername: "touser",
-      file: mockEncryptedFile,
+  it("should retrieve all usernames", async () => {
+    await authService.register("testuser1", "Password123!", "publickey123", {
+      iv: "iv",
+      salt: "salt",
+      data: "data",
+      authTag: "authTag",
     });
-    expect(error).toBeNull();
-  });
+    await authService.register("testuser2", "Password123!", "publickey456", {
+      iv: "iv",
+      salt: "salt",
+      data: "data",
+      authTag: "authTag",
+    });
 
-  it("should get files shared with a user", async () => {
-    const fileService = new FileService(userDB, fileDB);
-    await registerTestUser(authService, "fromuser");
-    await registerTestUser(authService, "touser");
-
-    const file: YeehawFile = {
-      fromUsername: "fromuser",
-      toUsername: "touser",
-      file: mockEncryptedFile,
-    };
-
-    await fileService.upload(file);
-
-    const { data } = await api.files.shared({ username: "touser" }).get();
-
-    expect(data).toEqual([{
-      id: 1,
-      fromUsername: "fromuser",
-      name: "testfile.txt",
-      size: mockEncryptedFile.size,
-    }]);
+    const usernames = await authService.getUsers();
+    expect(usernames).toEqual(["testuser1", "testuser2"]);
   });
 });
+
+it("should upload a file", async () => {
+  await registerTestUser(authService, "fromuser");
+  await registerTestUser(authService, "touser");
+
+  const { error } = await api.upload.post({
+    fromUsername: "fromuser",
+    toUsername: "touser",
+    file: mockEncryptedFile,
+  });
+  expect(error).toBeNull();
+});
+
+it("should get files shared with a user", async () => {
+  const fileService = new FileService(userDB, fileDB);
+  await registerTestUser(authService, "fromuser");
+  await registerTestUser(authService, "touser");
+
+  const file: YeehawFile = {
+    fromUsername: "fromuser",
+    toUsername: "touser",
+    file: mockEncryptedFile,
+  };
+
+  await fileService.upload(file);
+
+  const { data } = await api.files.shared({ username: "touser" }).get();
+
+  expect(data).toEqual([{
+    id: 1,
+    fromUsername: "fromuser",
+    name: "testfile.txt",
+    size: mockEncryptedFile.size,
+  }]);
+});
+
